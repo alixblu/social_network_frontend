@@ -8,7 +8,6 @@
 }
 
 .left-top-bar{
-    /* position: relative; */
     display: flex;
     align-items: center;
     height: 100%;
@@ -17,15 +16,17 @@
 
 
 
-.left-fb-icon{
-    margin-left: 5px;
+.left-fb-icon a{
+    padding-left: 5px;
     width: 45px; 
     height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%; /* Bo tròn */
+    border-radius: 50%; 
 }
+
+
 .fb_icon{
     font-size: 50px !important;
     color: blue;
@@ -48,6 +49,7 @@
     height: 40px;
     display: flex;
     align-items: center;
+    justify-content: center;
     background-color:#e4e4e4;
     border-radius:  50px 0 0 50px;
     padding-left: 10px;
@@ -213,3 +215,62 @@
     text-align: center;
 }
 
+
+
+
+
+@media (max-width: 1150px) {  /* Điều chỉnh kích thước tùy theo yêu cầu */
+
+    .search-bar{
+        justify-content: flex-start;
+        margin-left: 0;
+    }
+
+    .search-bar input{
+        display: none;
+    }
+
+    .search-bar label{
+        border-radius: 50px;
+        padding-left: 0;
+        width: 40px;
+    }
+
+    .left-top-bar {
+        justify-content: flex-start;
+    }
+
+    .left-fb-icon {
+        margin-right: 10px; /* Giữ khoảng cách hợp lý */
+    }
+
+    .search_icon {
+        display: flex !important;
+        font-size: 28px !important;
+        color: #7a7878;
+    }
+
+    .middle-top-bar {
+        width: 50%;
+    }
+
+    .list_icon_middle {
+        gap: 2px;
+    }
+
+    .list_icon_middle a {
+        width: 60px; 
+    }
+}
+
+
+@media (max-width : 900px) {
+  .middle-top-bar{
+    display: none;
+  }
+
+ 
+  .right-top-bar{
+    width: 100%;
+  }
+}
