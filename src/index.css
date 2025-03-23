@@ -1,0 +1,32 @@
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .main-content {
+    display: flex;
+    flex: 1;
+  }
+  
+  .leftsidebar {
+    width: 280px;
+    height: 100vh;
+    background-color: #f0f2f5;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    position: fixed;
+    top: 56px; /* Chiều cao của Header */
+    left: 0;
+    bottom: 0;
+  }
+  
+  .content-area {
+    margin-left: 280px; /* Để tránh bị sidebar che */
+    flex: 1;
+    padding: 20px;
+  }
+  
