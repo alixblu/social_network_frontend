@@ -1,15 +1,23 @@
 
 import './header.css';
 
-import { Search, Facebook , Home, OndemandVideo, Storefront, Groups3, SportsEsports, Apps, ChatBubble, Notifications } from "@mui/icons-material"
-import React, { useState } from 'react';
+import { Search, Facebook , Home, OndemandVideo,
+Storefront, Groups3, SportsEsports, Apps,
+ChatBubble, Notifications, Person, Settings,QuestionMark ,
+Nightlight, Report, MeetingRoom, ArrowForwardIos,ArrowBackOutlined } from "@mui/icons-material"
+import React, { useState, useEffect, useRef } from 'react';
 function Header() {
+
+  const searchRef = useRef(null); // Tham chiếu đến phần tử search-popup
+  
 
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMessOpen, setIsMessOpen] = useState(false); 
   const [isNotiOpen, setIsNotiOpen] = useState(false); 
   const [isAccOpen, setIsAccOpen] = useState(false); 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -39,7 +47,32 @@ function Header() {
     setIsNotiOpen(false); 
   };
   
+  const toggleSearch = () =>{
+    setIsSearchOpen(!isSearchOpen);
+    setIsMessOpen(false);
+    setIsMenuOpen(false); 
+    setIsNotiOpen(false); 
+    setIsAccOpen(false);
+  }
+  
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Nếu phần tử được click không nằm trong search-popup => đóng popup
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+      }
+    }
+    
+    if (isSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
 
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSearchOpen]);
 
   return (
     <>
@@ -50,11 +83,11 @@ function Header() {
              <Facebook className="fb_icon" />
             </a>
           </div>
-          <div className='search-bar'>
+          <div  onClick={toggleSearch} className='search-bar'>
             <label htmlFor="">
               <Search className='search_icon' />
             </label>
-            <input placeholder='Tìm kiếm trên Facebook' type="text" name="" id="" />
+            <input  placeholder='Tìm kiếm trên Facebook' type="text" name="" id="" />
           </div>
         </div>
         <div className="middle-top-bar">
@@ -115,6 +148,19 @@ function Header() {
             <img onClick={toggleAcc} title='Tài khoản' src="./src/assets/1.png" alt="" />
         </div>
 
+        {isSearchOpen &&(
+          <div ref={searchRef} className="search-popup">
+            <div className="search-content">
+              <label onClick={toggleSearch} htmlFor=""><ArrowBackOutlined/></label>
+              <div className='search-bar'>
+                <input style={{ display: "block" , width: "250px", borderRadius: "50px", paddingLeft: "20px", }} placeholder='Tìm kiếm trên Facebook' type="text" name="" id="" />
+              </div>
+            </div>
+            <div style={{display: "flex", justifyContent: "center", padding:"10px"}}><label htmlFor="">Không có tìm kiếm nào gần đây</label></div>
+          </div>
+        )}
+
+
         {isMenuOpen && (
           <div className="menu-popup">
             <div className="menu-content">
@@ -145,8 +191,74 @@ function Header() {
         {isAccOpen && (
           <div className="acc-popup">
             <div className="acc-content">
-              <h3>Tài khoản</h3>
-              <p>Nội dung thông báo</p>
+              <div className='acc1'>
+                <img src="./src/assets/1.png" alt="" />
+                <label htmlFor="">Huỳnh Vĩ</label>
+              </div>            
+              <div className='acc2'></div>
+              <div className='acc3'>
+                <Person/>
+                <label htmlFor="">Xem trang cá nhân</label>
+              </div>  
+            </div>  
+            <div> 
+              <div className='acc-contend-1'>
+                <div>
+                  <label className='acc_lbl' htmlFor="">
+                    <Settings/>
+                  </label>
+                  <label htmlFor="">Cài đặt và quyền riêng tư</label>
+                </div>
+                <label htmlFor="">
+                  <ArrowForwardIos/>
+                </label>
+              </div>
+              <div className='acc-contend-1'>
+                <div>
+                  <label className='acc_lbl' htmlFor="">
+                    <QuestionMark/>
+                  </label>
+                  <label htmlFor="">Trợ giúp và hỗ trợ</label>
+                </div>
+                <label htmlFor="">
+                  <ArrowForwardIos/>
+                </label>
+              </div>
+              <div className='acc-contend-1'>
+                <div>
+                  <label className='acc_lbl' htmlFor="">
+                    <Nightlight/>
+                  </label>
+                  <label htmlFor="">Màn hình & trợ năng</label>
+                </div>
+                <label htmlFor="">
+                  <ArrowForwardIos/>
+                </label>
+              </div>
+              <div className='acc-contend-1'>
+                <div>
+                  <label className='acc_lbl' htmlFor="">
+                    <Report/>
+                  </label>
+                  <label htmlFor="">Đóng góp ý kiến</label>
+                </div>
+              </div>
+              <div className='acc-contend-1'>
+                <div>
+                  <label className='acc_lbl' htmlFor="">
+                    <MeetingRoom/>
+                  </label>
+                  <label htmlFor="">Đăng xuất</label>
+                </div>
+              </div>
+            </div>
+            <div className='acc-footer'>
+              <label htmlFor=""><a href="">Quyền riêng tư </a>· </label>
+              <label htmlFor=""><a href="">Điều khoản </a>· </label>
+              <label htmlFor=""><a href="">Quảng cáo </a>· </label>
+              <label htmlFor=""><a href="">Lựa chọn quảng cáo </a>· </label>
+              <label htmlFor=""><a href="">Cookie </a>· </label>
+              <label htmlFor=""><a href="">Xem thêm </a>· Meta 2025</label>
             </div>
           </div>
         )}
