@@ -1,0 +1,66 @@
+.leftsidebar {
+    width: 280px;
+    height: 100vh;
+    background-color: #f0f2f5;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Cho phép cuộn */
+    border-radius: 8px;
+  }  
+  
+  /* Danh sách menu */
+  .menu, .shortcuts ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .menu li, .shortcuts li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    font-size: 16px;
+    color: #050505;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s ease-in-out;
+  }
+  
+  .menu li:hover, .shortcuts li:hover {
+    background-color: #e4e6eb;
+  }
+  
+  .menu li svg {
+    margin-right: 15px;
+    color: #1877f2;
+    font-size: 24px;
+  }
+  
+  /* Phần "Xem thêm" */
+  .see-more {
+    font-weight: bold;
+    color: #1877f2;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  .see-more:hover {
+    background-color: #e4e6eb;
+  }
+  
+  /* Phần Lối tắt */
+  .shortcuts {
+    margin-top: 15px;
+  }
+  
+  .shortcuts h4 {
+    font-size: 14px;
+    color: #65676b;
+    margin-bottom: 10px;
+  }
+  
