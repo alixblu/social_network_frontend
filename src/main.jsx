@@ -11,7 +11,6 @@ createRoot(document.getElementById("root")).render(
       <div className="main-content">
         <LeftSidebar />
         <div className="content-area">
-          {/* Nội dung chính ở đây */}
         </div>
       </div>
     </div>
