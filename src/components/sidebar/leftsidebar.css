@@ -8,6 +8,7 @@
     flex-direction: column;
     overflow-y: auto; /* Cho phép cuộn */
     border-radius: 8px;
+    z-index: 5
   }  
   
   /* Danh sách menu */

@@ -1,18 +1,11 @@
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
-import Header from './components/header/header.jsx';
-import LeftSidebar from './components/sidebar/leftsidebar.jsx';
+import App from './App.jsx';
+import './index.css'
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <div className="app-container">
-      <Header />
-      <div className="main-content">
-        <LeftSidebar />
-        <div className="content-area">
-        </div>
-      </div>
-    </div>
+    <App/>
   </StrictMode>
 );
