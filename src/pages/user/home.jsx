@@ -1,6 +1,6 @@
 import React from 'react'
-import Header from '../components/header/header'
-import LeftSidebar from '../components/sidebar/leftsidebar'
+import Header from '../../components/header/header'
+import LeftSidebar from '../../components/sidebar/leftsidebar'
 function home() {
 
   return (
