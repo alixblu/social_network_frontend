@@ -1,9 +1,11 @@
 const routes = {
-
-    // Đường đẫn để truy cập vào các pages tương ứng
-    home: '/home',
-    profile: '/profile',
-
-};
-
-export default routes;
+    home: "/home",           // Trang chủ
+    profile: "/profile",     // Trang cá nhân
+    friends: "/friends",     // Trang bạn bè
+    // Có thể thêm các route khác sau này như:
+    // messages: "/messages",
+    // settings: "/settings",
+  };
+  
+  export default routes;
+  
