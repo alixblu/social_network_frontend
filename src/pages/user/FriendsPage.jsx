@@ -10,53 +10,54 @@ const friends = [
   {
     name: "Bích Trâm",
     mutual: 1,
-    avatar: "https://via.placeholder.com/100",
+    avatar: "../../../public/images/2.jpg",
   },
   {
     name: "Olivia Bùi",
     mutual: 0,
-    avatar: "https://via.placeholder.com/100",
+    avatar: "../../../public/images/3.jpg",
   },
   {
     name: "Hồ Ngọc Điệp",
     mutual: 24,
-    avatar: "https://via.placeholder.com/100",
+    avatar: "../../../public/images/1.jpg",
   },
   {
     name: "Nguyễn Thị Ngọc Bích",
     mutual: 66,
-    avatar: "https://via.placeholder.com/100",
+    avatar: "../../../public/images/7.jpg",
   },
   {
     name: "Thùy Trung",
     mutual: 16,
-    avatar: "https://via.placeholder.com/100",
+    avatar: "../../../public/images/8.jpg",
   },
   {
     name: "Ánh Trúc",
     mutual: 19,
-    avatar: "https://via.placeholder.com/100",
+    avatar: "../../../public/images/9.jpg",
   },
 ];
 
 const allFriends = [
-  { name: "Huy Nguyễn", mutual: 8, avatar: "https://via.placeholder.com/100" },
-  { name: "Minh Trần", mutual: 3, avatar: "https://via.placeholder.com/100" },
-  { name: "Lan Phạm", mutual: 10, avatar: "https://via.placeholder.com/100" },
-  { name: "Tú Anh", mutual: 0, avatar: "https://via.placeholder.com/100" },
-  { name: "Duy Khánh", mutual: 5, avatar: "https://via.placeholder.com/100" },
-  { name: "Hoài Bảo", mutual: 2, avatar: "https://via.placeholder.com/100" },
-  { name: "Thảo Vy", mutual: 1, avatar: "https://via.placeholder.com/100" },
-  { name: "Thanh Hằng", mutual: 7, avatar: "https://via.placeholder.com/100" },
-  { name: "Bảo Châu", mutual: 4, avatar: "https://via.placeholder.com/100" },
-  { name: "Trung Tín", mutual: 9, avatar: "https://via.placeholder.com/100" },
-  { name: "Quốc Huy", mutual: 6, avatar: "https://via.placeholder.com/100" },
-  { name: "Ngọc Hân", mutual: 0, avatar: "https://via.placeholder.com/100" },
-  { name: "Hải Yến", mutual: 3, avatar: "https://via.placeholder.com/100" },
-  { name: "Thanh Trúc", mutual: 1, avatar: "https://via.placeholder.com/100" },
-  { name: "Khánh Linh", mutual: 11, avatar: "https://via.placeholder.com/100" },
-  { name: "Anh Dũng", mutual: 5, avatar: "https://via.placeholder.com/100" },
+  { name: "Huy Nguyễn", mutual: 8, avatar: "/images/4.jpg" },
+  { name: "Minh Trần", mutual: 3, avatar: "/images/2.jpg" },
+  { name: "Lan Phạm", mutual: 10, avatar: "/images/3.jpg" },
+  { name: "Tú Anh", mutual: 0, avatar: "/images/4.jpg" },
+  { name: "Duy Khánh", mutual: 5, avatar: "/images/5.jpg" },
+  { name: "Hoài Bảo", mutual: 2, avatar: "/images/6.jpg" },
+  { name: "Thảo Vy", mutual: 1, avatar: "/images/7.jpg" },
+  { name: "Thanh Hằng", mutual: 7, avatar: "/images/8.jpg" },
+  { name: "Bảo Châu", mutual: 4, avatar: "/images/9.jpg" },
+  { name: "Trung Tín", mutual: 9, avatar: "/images/10.jpg" },
+  { name: "Quốc Huy", mutual: 6, avatar: "/images/1.jpg" },
+  { name: "Ngọc Hân", mutual: 0, avatar: "/images/2.jpg" },
+  { name: "Hải Yến", mutual: 3, avatar: "/images/3.jpg" },
+  { name: "Thanh Trúc", mutual: 1, avatar: "/images/2.jpg" },
+  { name: "Khánh Linh", mutual: 11, avatar: "/images/9.jpg" },
+  { name: "Anh Dũng", mutual: 5, avatar: "/images/4.jpg" },
 ];
+
 
 const Sidebar = ({ selected, onSelect }) => {
   const items = [

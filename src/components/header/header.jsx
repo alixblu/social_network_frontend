@@ -114,7 +114,7 @@ function Header() {
             <li className=''>
               <span>
                 <div></div>
-                <a title='Trang chủ' aria-label='Trang chủ' href="">
+                <a title='Trang chủ' aria-label='Trang chủ' href="home">
                       <Home/>
                 </a>
               </span>
