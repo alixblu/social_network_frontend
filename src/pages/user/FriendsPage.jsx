@@ -143,12 +143,48 @@ const BlockedFriendCard = ({ name, avatar, onUnblock }) => (
     </CardContent>
   </Card>
 );
+const FriendSuggestionCard = ({ name, mutual, avatar, onBlock, onAddFriend }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
+
+  return (
+    <Card className="w-60 relative">
+      <CardContent className="p-4 text-center">
+        <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
+        <div className="font-semibold">{name}</div>
+        <div className="text-sm text-gray-500 min-h-[1.25rem]">
+          {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
+        </div>
+        <div className="flex justify-center gap-2 mt-2">
+          <button onClick={onAddFriend} className="friend-action confirm">Thêm bạn</button>
+          <button onClick={() => onBlock({ name, avatar })} className="friend-action delete">Gỡ</button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function FriendsPage() {
   const [tab, setTab] = useState("Trang chủ");
   const [search, setSearch] = useState("");
   const [blockedSearch, setBlockedSearch] = useState("");
   const [blockedFriends, setBlockedFriends] = useState([]);
+  const [showMoreRequests, setShowMoreRequests] = useState(false);
+  const [showMoreSuggestions, setShowMoreSuggestions] = useState(false);
 
   const handleBlock = (friend) => {
     setBlockedFriends((prev) => [...prev, friend]);
@@ -166,26 +202,82 @@ export default function FriendsPage() {
     f.name.toLowerCase().includes(blockedSearch.toLowerCase())
   );
 
+  const visibleRequests = showMoreRequests ? friends : friends.slice(0, 8);
+
+  const suggestions = allFriendsData.filter(
+    (f) =>
+      !blockedFriends.some((b) => b.name === f.name) &&
+      !friends.some((fr) => fr.name === f.name)
+  );
+
+  const visibleSuggestions = showMoreSuggestions
+    ? suggestions
+    : suggestions.slice(0, 8);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
       <div className="flex flex-1 pt-[0px] overflow-hidden bg-gray-100">
         <Sidebar selected={tab} onSelect={setTab} />
         <div className="flex-1 overflow-y-auto p-6">
-          {tab === "Trang chủ" && <h1 className="text-2xl font-bold">Trang chủ bạn bè</h1>}
-
-          {tab === "Lời mời kết bạn" && (
+          {tab === "Trang chủ" && (
             <div>
-              <h1 className="text-2xl font-bold mb-4">Lời mời kết bạn</h1>
-              <ScrollArea className="h-full pr-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {friends.map((f) => (
-                    <FriendCard key={f.name} {...f} />
-                  ))}
+              <h2 className="text-xl font-semibold mb-2">Tất cả lời mời kết bạn</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+                {visibleRequests.map((f) => (
+                  <FriendCard key={f.name} {...f} />
+                ))}
+              </div>
+              {friends.length > 8 && (
+                <div className="text-center mt-4">
+                  <button
+                    className="text-blue-600 hover:underline"
+                    onClick={() => setShowMoreRequests(!showMoreRequests)}
+                  >
+                    {showMoreRequests ? "Ẩn bớt" : "Xem thêm"}
+                  </button>
                 </div>
-              </ScrollArea>
+              )}
+
+              <div className="w-full h-px bg-gray-300 my-4"></div>
+
+              <h2 className="text-xl font-semibold mb-2">Gợi ý kết bạn</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {visibleSuggestions.map((f) => (
+                  <FriendSuggestionCard
+                    key={f.name}
+                    {...f}
+                    onBlock={handleBlock}
+                    onAddFriend={() => {}}
+                  />
+                ))}
+              </div>
+              {suggestions.length > 8 && (
+                <div className="text-center mt-4">
+                  <button
+                    className="text-blue-600 text-sm hover:underline"
+                    onClick={() => setShowMoreSuggestions(!showMoreSuggestions)}
+                  >
+                    {showMoreSuggestions ? "Ẩn bớt" : "Xem tất cả"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
+        
+
+            {tab === "Lời mời kết bạn" && (
+              <div>
+                <h1 className="text-2xl font-bold mb-4">Lời mời kết bạn</h1>
+                <ScrollArea className="h-full pr-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {friends.map((f) => (
+                      <FriendCard key={f.name} {...f} />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
           {tab === "Tất cả bạn bè" && (
             <div>
