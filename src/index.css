@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-
+* {
+  box-sizing: border-box;
+}
 .app-container {
     display: flex;
     flex-direction: column;
@@ -10,9 +12,11 @@
     background-color: #f0f2f5;
   }
   
+  
   .main-content {
     display: flex;
     flex: 1;
+    margin-top: 0px;
   }
   
   .leftsidebar {
@@ -25,13 +29,52 @@
     flex-direction: column;
     overflow-y: auto;
     position: fixed;
-    top: 56px; /* Chiều cao của Header */
+    top: 56px; 
     left: 0;
     bottom: 0;
   }
   
   .content-area {
-    margin-left: 280px; /* Để tránh bị sidebar che */
+    margin-left: 290px;
+    margin-right: 360px;
     flex: 1;
     padding: 20px;
+    display: flex;
+    justify-content: center;
   }
+
+  .container-question{
+    display:flex;
+    width:100%;
+    align-items:center; 
+    padding:15px; 
+    cursor:pointer
+  }
+  .text-area {
+    flex: 1;
+    margin-left: 10px;
+    font-size: 18px;
+    background-color: rgb(229, 231, 235);
+    padding: 10px 0 10px 10px;
+    border-radius: 20px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .text-area:hover {
+    background-color: rgb(206, 207, 209);
+  }
+  
+  .div-anh-video{
+    width:100%; 
+    height:40px;
+     display:flex;
+    justify-content:center;
+    align-items:center;
+    border-top:1px rgb(202 199 199) solid;
+    transition: background-color 0.3s ease;
+  }
+
+  .div-anh-video:hover{
+    background-color:  rgb(206, 207, 209);
+  }
+
