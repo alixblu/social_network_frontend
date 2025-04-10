@@ -64,4 +64,13 @@
     color: #65676b;
     margin-bottom: 10px;
   }
+  .active-link {
+    color: #1877f2;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  .menu li a {
+    text-decoration: none;
+    color: inherit;
+  }
   
