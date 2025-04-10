@@ -6,12 +6,12 @@
   .main-content {
     display: flex;
     flex-direction: column;
-    margin-top: 56px; /* Chiều cao Header */
   }
   
   .friendspage {
     display: flex;
     padding: 20px;
+
   }
   
   .friend-left {

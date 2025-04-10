@@ -64,77 +64,31 @@ function Header() {
           <label><Search className='search_icon' /></label>
           <input placeholder='Tìm kiếm trên Facebook' type="text" />
         </div>
-        <div className="middle-top-bar">
-          <ul className='list_icon_middle'>
-            <li className=''>
-              <span>
-                <div></div>
-                <a title='Trang chủ' aria-label='Trang chủ' href="">
-                      <Home/>
-                </a>
-              </span>
-            </li>
-            <li className=''>
-              <span>
-                <div></div>
-                <a title='Video' aria-label='Video' href="">
-                    <OndemandVideo/>
-                </a>
-              </span>
-            </li>
-            <li className=''>
-              <span>
-                <div></div>
-                <a title='MarketPlace' aria-label='MarketPlace' href="">
-                    <Storefront/>  
-                </a>
-              </span>
-            </li>
-            <li className=''>
-              <span>
-                <div></div>
-                <a title='Mọi người' aria-label='Mọi người' href="">
-                    <Groups3/>
-                </a>
-              </span>
-            </li>
-            <li className=''>
-              <span>
-                <div></div>
-                <a title='Game' aria-label='Game' href="">
-                    <SportsEsports/>
-                </a>
-              </span>
-            </li>
-          </ul>
-        </div>
-        <div className="right-top-bar">
-            <div onClick={() => togglePopup('menu')} title='Menu' id='menu' >
-              <Apps/>
+      </div>
+
+      <div className="middle-top-bar">
+        <ul className='list_icon_middle'>
+          {renderMiddleIcons()}
+        </ul>
+      </div>
+
+      <div className="right-top-bar">
+        <div onClick={() => togglePopup('menu')} title='Menu'><Apps /></div>
+        <div onClick={() => togglePopup('mess')} title='Messenger'><ChatBubble /></div>
+        <div onClick={() => togglePopup('noti')} title='Thông báo'><Notifications /></div>
+        <img onClick={() => togglePopup('acc')} title='Tài khoản' src="./src/assets/1.png" alt="Avatar" />
+      </div>
+
+      <div ref={popupRef}>
+        {activePopup === 'search' && (
+          <div className="search-popup">
+            <div className="search-content">
+              <label onClick={() => setActivePopup(null)}><ArrowBackOutlined /></label>
+              <input placeholder='Tìm kiếm trên Facebook' style={{ width: "250px", borderRadius: "50px", paddingLeft: "20px" }} />
             </div>
-            <div onClick={() => togglePopup('mess')} title='Messenger' >
-              <ChatBubble/>
-            </div>
-            <div onClick={() => togglePopup('noti')} title='Thông báo'>
-              <Notifications/>
-            </div>
-            {/* <div></div> */}
-            <img onClick={() => togglePopup('acc')} title='Tài khoản' src="./src/assets/1.png" alt="" />
-        </div>
-        <div ref={popupRef}>
-          {activePopup === 'search' && (
-            <div className="search-popup">
-              <div className="search-content">
-                <label onClick={() => setActivePopup(null)}><ArrowBackOutlined/></label>
-                <div className='search-bar'>
-                  <input placeholder='Tìm kiếm trên Facebook' type="text" style={{ width: "250px", borderRadius: "50px", paddingLeft: "20px" }} />
-                </div>
-              </div>
-              <div style={{display: "flex", justifyContent: "center", padding:"10px"}}>
-                <label>Không có tìm kiếm nào gần đây</label>
-              </div>
-            </div>
-          )}
+            <div className="center"><label>Không có tìm kiếm nào gần đây</label></div>
+          </div>
+        )}
 
         {activePopup === 'menu' && (
           <div className="menu-popup">
