@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-
+html, body {
+  overflow-x: hidden;
+}
 .app-container {
     display: flex;
     flex-direction: column;

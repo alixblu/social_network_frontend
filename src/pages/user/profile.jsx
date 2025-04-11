@@ -28,6 +28,8 @@ function Profile() {
     setOpenEdit(!isOpenEdit);
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col relative justify-center max-h-max">
       <Header />
@@ -198,12 +200,17 @@ function Profile() {
           <div className="fixed inset-0 bg-black bg-opacity-40 z-40" />
 
           {/* Modal content */}
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 w-full  max-w-[600px]  bg-white rounded-xl shadow-lg z-50">
+          <div className="fixed top-[50px] left-1/2 -translate-x-1/2 w-full  max-w-[700px]  bg-white rounded-xl shadow-lg z-50">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-lg font-semibold">Chỉnh sửa trang cá nhân</h2>
-              <button onClick={toggleEdit} className="text-gray-500 hover:text-black text-xl">&times;</button>
+              <button 
+                onClick={toggleEdit} 
+                className="text-gray-500 hover:text-black text-xl rounded-full bg-slate-200 flex items-center justify-center w-8 h-8"
+              >
+                &times;
+              </button>
             </div>
-
+            
             <div className="p-4 space-y-6">
               {/* Ảnh đại diện */}
               <div className="text-center">
