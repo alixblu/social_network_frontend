@@ -51,9 +51,9 @@
     padding: 15px;
   }
   .post-content {
-    word-wrap: break-word; /* Ngắt từ khi quá dài */
-    overflow-wrap: break-word; /* Tương tự, dành cho trình duyệt hiện đại */
-    white-space: pre-wrap; /* Bảo toàn xuống dòng và khoảng trắng, vẫn ngắt dòng tự động */
+    word-wrap: break-word; 
+    overflow-wrap: break-word; 
+    white-space: pre-wrap;
     padding:15px;
   }
 
