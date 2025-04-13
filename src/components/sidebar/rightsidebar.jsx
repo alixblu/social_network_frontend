@@ -4,8 +4,15 @@ import "./rightsidebar.css";
 import {
     Search
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 function rightsidebar() {
+    const navigate = useNavigate(); // ✅ hook điều hướng
+
+    const handleAvatarClick = () => {
+        navigate('/profile'); // ✅ điều hướng tới route
+    };
+
   return (
     <div className='right-side-bar'>
         <div className='add-friend-bar'>
@@ -14,7 +21,7 @@ function rightsidebar() {
         </div>
 
         <div className="thongbao">
-            <div className="avarta-add-friend">
+            <div className="avarta-add-friend" onClick={handleAvatarClick}>
                 <img src="./src/assets/2.jpg"/>
             </div>
             <div className="confirm-addFriend">
@@ -43,117 +50,83 @@ function rightsidebar() {
             </div>
 
             <div>
-                <ul>
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
+                <div className='div-user-chat'>
+                    <div>
+                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                            borderRadius:'50%', marginRight:'20px'
 
-                                }}/>
-                            </div>
+                        }}/>
+                    </div>
 
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
+                    <div style={{width:'100%'}}>
+                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                    </div>
+                </div>
 
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
+                <div className='div-user-chat'>
+                    <div>
+                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                            borderRadius:'50%', marginRight:'20px'
 
-                                }}/>
-                            </div>
+                        }}/>
+                    </div>
+                        
+                    <div style={{width:'100%'}}>
+                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                    </div>
+                </div>
 
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
+                <div className='div-user-chat'>
+                    <div>
+                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                            borderRadius:'50%', marginRight:'20px'
 
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
+                        }}/>
+                    </div>
+                        
+                    <div style={{width:'100%'}}>
+                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                    </div>
+                </div>
 
-                                }}/>
-                            </div>
+                <div className='div-user-chat'>
+                    <div>
+                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                            borderRadius:'50%', marginRight:'20px'
 
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
+                        }}/>
+                    </div>
+                        
+                    <div style={{width:'100%'}}>
+                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                    </div>
+                </div>
 
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
+                <div className='div-user-chat'>
+                    <div>
+                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                            borderRadius:'50%', marginRight:'20px'
 
-                                }}/>
-                            </div>
+                        }}/>
+                    </div>
+                        
+                    <div style={{width:'100%'}}>
+                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                    </div>
+                </div>
 
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
+                <div className='div-user-chat'>
+                    <div>
+                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                            borderRadius:'50%', marginRight:'20px'
 
-
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
-
-                                }}/>
-                            </div>
-
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
-
-
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
-
-                                }}/>
-                            </div>
-
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
-
-
-                    <li>
-                        <div className='div-user-chat'>
-                            <div>
-                                <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                                    borderRadius:'50%', marginRight:'20px'
-
-                                }}/>
-                            </div>
-
-                            <div style={{width:'100%'}}>
-                                <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                            </div>
-                        </div>
-                    </li>
-                    
-                            
-                </ul>
+                        }}/>
+                    </div>
+                        
+                    <div style={{width:'100%'}}>
+                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

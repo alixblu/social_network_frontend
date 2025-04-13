@@ -2,7 +2,6 @@ import config from "../config";
 import Home from "../pages/user/home"
 import Profile from "../pages/user/profile";
 import FriendsPage from '../pages/user/FriendsPage'
-import popupPost from "../components/content/popup/popupPost";
 import content from "../components/content/contentArea";
 import Login from '../pages/auth/login'
 import Register from '../pages/auth/register'

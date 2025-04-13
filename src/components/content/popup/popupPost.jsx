@@ -61,7 +61,7 @@ function PopupPost({ onClose }) {
         <div style={{ width: '100%', textAlign: 'center', fontSize: '20px', borderBottom: '1px rgb(202 199 199) solid', marginBottom: '10px', paddingBottom: "10px" }}>Tạo bài viết</div>
 
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="./src/assets/4.jpg" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+          <img src="./src/assets/2.jpg" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: "10px" }}>
             <div style={{ fontWeight: 'bold' }}>Đàm Khả Di</div>
             <select style={{ padding: '5px', borderRadius: '5px', backgroundColor: "rgb(202 199 199)", border: 'none', outline: 'none' }}

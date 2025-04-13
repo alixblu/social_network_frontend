@@ -20,7 +20,7 @@ export function getPostItem (post){
       <div style={{backgroundColor:'white', borderRadius:'10px', marginBottom:'20px'}}>
           <div className="post-info">
             <div className="info-container">
-              <img src="./src/assets/4.jpg" className="info-compoment-image"/>
+              <img src="./src/assets/2.jpg" className="info-compoment-image"/>
               <div style={{display:'flex', flexDirection:'column', marginLeft:'10px'}}>
                 <span className="info-compoment-user">{user.name}</span>
                 <span style={{fontSize:"12px"}}>{post.time}</span>
@@ -106,7 +106,7 @@ function contentArea (){
 
                 <div style={{width:'100%', backgroundColor:'white', borderRadius:'10px'}}>
                 <div  className="container-question">
-                    <img src="./src/assets/4.jpg" style={{width:'45px', height:'45px', borderRadius:'50%'}}/>
+                    <img src="./src/assets/2.jpg" style={{width:'45px', height:'45px', borderRadius:'50%'}}/>
                     <span className="text-area" onClick={handleTextAreaClick}>
                         Hoài Nam ơi, bạn đang nghĩ gì thế?
                     </span>
