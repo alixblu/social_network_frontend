@@ -13,7 +13,7 @@ import {
 function home() {
   
   return (
-    <div className="app-container">
+    <div className="app-container ">
       <Header />
       <div className="main-content">
         <LeftSidebar />

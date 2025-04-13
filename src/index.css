@@ -34,4 +34,17 @@
     left: 0;
     bottom: 0;
   }
-  
+
+  .content-area {
+    margin-left: 280px; /* Để tránh bị sidebar che */
+    flex: 1;
+    padding: 20px;
+  }
+  html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
