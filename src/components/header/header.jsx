@@ -21,12 +21,14 @@ import {
   MoreHoriz,
   Fullscreen,
   Create,
+  AdminPanelSettings,
 } from "@mui/icons-material";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MessengerChatBox from "../ui/chatbox";
 
 function Header() {
+  const [isAdmin, setAdmin] = useState(true);
   const [activePopup, setActivePopup] = useState(null);
   const popupRef = useRef(null);
   const navigate = useNavigate();
@@ -58,6 +60,18 @@ function Header() {
     { Avatar: "2.jpg", Name: "Vũ", Content: "Con gà mạnh" },
     { Avatar: "3.jpg", Name: "Nhật", Content: "Hôm nay đi đá banh không?" },
     { Avatar: "4.jpg", Name: "Nam", Content: "Hello You" },
+  ];
+
+
+  const menuItems = [
+    { icon: <Settings />, text: "Cài đặt và quyền riêng tư" },
+    { icon: <QuestionMark />, text: "Trợ giúp và hỗ trợ" },
+    { icon: <Nightlight />, text: "Màn hình & trợ năng" },
+    { icon: <Report />, text: "Đóng góp ý kiến" },
+    ...(isAdmin
+      ? [{ icon: <AdminPanelSettings />, text: "Admin", link: "/Admin" }]
+      : []),
+    { icon: <MeetingRoom />, text: "Đăng xuất", link: "/login" },
   ];
 
   const BackToHome = () => navigate("/home");
@@ -239,13 +253,7 @@ function Header() {
               </div>
             </div>
             <div>
-              {[
-                { icon: <Settings />, text: "Cài đặt và quyền riêng tư" },
-                { icon: <QuestionMark />, text: "Trợ giúp và hỗ trợ" },
-                { icon: <Nightlight />, text: "Màn hình & trợ năng" },
-                { icon: <Report />, text: "Đóng góp ý kiến" },
-                { icon: <MeetingRoom />, text: "Đăng xuất", link: "/login" },
-              ].map((item, idx) => (
+              {menuItems.map((item, idx) => (
                 <div
                   onClick={() => item.link && navigate(item.link)}
                   key={idx}

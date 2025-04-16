@@ -27,11 +27,25 @@ function Profile() {
   const toggleEdit = () => {
     setOpenEdit(!isOpenEdit);
   };
+  
+  const [username, setUsername] = useState("Huỳnh Vĩ");
+  const [showFileInput, setShowFileInput] = useState(false);
+  const fileInputRef = useRef(null);
 
+  const handleEditClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      console.log("Đã chọn ảnh:", file.name);
+    }
+  };
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col relative justify-center max-h-max">
+    <div className="flex flex-col relative justify-center h-auto">
       <Header />
       <div className="relative">
         {/* top */}
@@ -69,14 +83,14 @@ function Profile() {
               </div>
               <div className="relative w-full flex justify-end gap-3">
                 <button className="flex items-center px-2 py-2 bg-slate-500 rounded-lg">
-                  <Add/>
+                  <Add />
                   Thêm vào tin
                 </button>
                 <button
                   onClick={toggleEdit}
                   className="flex items-center px-2 py-2 bg-slate-500 rounded-lg"
                 >
-                  <Edit/>
+                  <Edit />
                   Chỉnh sửa trang cá nhân
                 </button>
                 <button className="absolute right-0 top-[45px] px-2 py-2 bg-slate-500 rounded-lg">
@@ -200,27 +214,39 @@ function Profile() {
           <div className="fixed inset-0 bg-black bg-opacity-40 z-40" />
 
           {/* Modal content */}
-          <div className="fixed top-[50px] left-1/2 -translate-x-1/2 w-full  max-w-[700px]  bg-white rounded-xl shadow-lg z-50">
-            <div className="flex justify-between items-center p-4 border-b">
+          <div className="fixed top-[50px] left-1/2 -translate-x-1/2 w-full  max-w-[700px] max-h-[620px] overflow-y-auto bg-white rounded-xl shadow-lg z-50 scrollbar-hide">
+            <div className="sticky top-0 flex justify-between items-center p-4 border-b bg-white">
               <h2 className="text-lg font-semibold">Chỉnh sửa trang cá nhân</h2>
-              <button 
-                onClick={toggleEdit} 
+              <button
+                onClick={toggleEdit}
                 className="text-gray-500 hover:text-black text-xl rounded-full bg-slate-200 flex items-center justify-center w-8 h-8"
               >
                 &times;
               </button>
             </div>
-            
-            <div className="p-4 space-y-6">
+
+            <div className="  p-4 space-y-8">
               {/* Ảnh đại diện */}
               <div className="text-center">
                 <div className="flex justify-between">
                   <h3 className="font-semibold mb-2 text-left">Ảnh đại diện</h3>
-                  <p className="text-blue-500 text-sm mt-1 cursor-pointer hover:underline">Chỉnh sửa</p>
+                  <p
+                    className="text-blue-500 text-sm mt-1 cursor-pointer hover:underline"
+                    onClick={handleEditClick}
+                  >
+                    Chỉnh sửa
+                  </p>
                 </div>
                 <img
                   src="./src/assets/1.png"
                   className="w-[120px] h-[120px] rounded-full mx-auto object-cover"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
                 />
               </div>
 
@@ -228,18 +254,57 @@ function Profile() {
               <div className="text-center">
                 <div className="flex justify-between">
                   <h3 className="font-semibold mb-2 text-left">Ảnh Bìa</h3>
-                  <p className="text-blue-500 text-sm mt-1 cursor-pointer hover:underline">Chỉnh sửa</p>
+                  <p className="text-blue-500 text-sm mt-1 cursor-pointer hover:underline">
+                    Chỉnh sửa
+                  </p>
                 </div>
                 <img
                   src="./src/assets/1.png"
                   className="rounded-lg mx-auto max-h-[150px] object-cover"
                 />
               </div>
+              <div className="flex flex-col justify-center items-center">
+                <div className="w-full max-w-[500px] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="font-semibold" htmlFor="">
+                      Tên người dùng:{" "}
+                    </label>
+                    <input
+                      className="w-80 h-10 bg-gray-300 font-semibold rounded-md outline-none p-2"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      type="text"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <label className="font-semibold" htmlFor="">
+                      Email:{" "}
+                    </label>
+                    <input
+                      className="w-80 h-10 bg-gray-300 rounded-md  outline-none p-2"
+                      type="email"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <label className="font-semibold" htmlFor="">
+                      Mật khẩu:{" "}
+                    </label>
+                    <input
+                      className="w-80 h-10 bg-gray-300 rounded-md  outline-none p-2"
+                      type="password"
+                    />
+                  </div>
+                  <div className="flex justify-center items-center pt-5">
+                    <button className="px-4 py-2 font-semibold bg-green-300 rounded-full">
+                      Chỉnh sửa
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </>
       )}
-
     </div>
   );
 }
