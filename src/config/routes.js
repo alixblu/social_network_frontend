@@ -8,6 +8,7 @@ const routes = {
     // Có thể thêm các route khác sau này như:
     // messages: "/messages",
     // settings: "/settings",
+    test:"/test"
   };
   
   export default routes;

@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-
+* {
+  box-sizing: border-box;
+}
 .app-container {
     display: flex;
     flex-direction: column;
@@ -10,9 +12,12 @@
     background-color: #f0f2f5;
   }
   
+  
   .main-content {
     display: flex;
     flex: 1;
+    margin-top: 0px;
+    background-color: rgb(240, 242, 245);
   }
   
   .leftsidebar {
@@ -25,22 +30,22 @@
     flex-direction: column;
     overflow-y: auto;
     position: fixed;
-    top: 56px; /* Chiều cao của Header */
+    top: 56px; 
     left: 0;
     bottom: 0;
   }
-  
+
   .content-area {
     margin-left: 280px; /* Để tránh bị sidebar che */
     flex: 1;
     padding: 20px;
   }
+  /*
   html,
-  body,
-  #root {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow-y: auto;
-  }
-  
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}*/
