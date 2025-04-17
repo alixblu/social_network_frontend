@@ -101,22 +101,25 @@ function contentArea (){
 
     return (
         <div className="content-area">
-          <div style={{ width: '70%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{width:'100%'}}>
+          <div style={{ width: '600px',display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                <div style={{width:'100%', backgroundColor:'white', borderRadius:'10px'}}>
-                <div  className="container-question">
-                    <img src="./src/assets/2.jpg" style={{width:'45px', height:'45px', borderRadius:'50%'}}/>
-                    <span className="text-area" onClick={handleTextAreaClick}>
-                        Hoài Nam ơi, bạn đang nghĩ gì thế?
-                    </span>
-                </div>
-                
-                <div className="div-anh-video" onClick={handleTextAreaClick}> 
-                    <div style={{color:'green', fontSize:'large', marginRight:'5px'}}><PhotoLibrary/></div>
-                    <span>Ảnh/Video</span>
-                </div>
-                </div>
+            <div style={{
+                width: '100%',
+                backgroundColor: 'white',
+                borderRadius: '10px',
+              }}>
+
+              <div  className="container-question">
+                  <img src="./src/assets/2.jpg" style={{width:'45px', borderRadius:'50%'}}/>
+                  <span className="text-area" onClick={handleTextAreaClick}>
+                      Hoài Nam ơi, bạn đang nghĩ gì thế?
+                  </span>
+              </div>
+              
+              <div className="div-anh-video" onClick={handleTextAreaClick}> 
+                  <div style={{color:'green', fontSize:'large', marginRight:'5px'}}><PhotoLibrary/></div>
+                  <span>Ảnh/Video</span>
+              </div>
             </div>
 
             <div className="list-post" style={{width:'100%'}}>

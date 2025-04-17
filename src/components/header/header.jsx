@@ -26,17 +26,32 @@ import {
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MessengerChatBox from "../ui/chatbox";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+
 
 function Header() {
   const [isAdmin, setAdmin] = useState(true);
-  const [activePopup, setActivePopup] = useState(null);
-  const popupRef = useRef(null);
+
+  //Xử lí các Navigate chuyển hướng
   const navigate = useNavigate();
+  const BackToHome = () => navigate("/home");
+  const GoToProfile = () => navigate("/profile");
+  const BackToLogin = () => navigate("/login");
+
+
+
+
+
+  // Xử lí phần xuất hiện của Popup
+  const [activePopup, setActivePopup] = useState(null);
 
   const togglePopup = (popupName) => {
     setActivePopup(activePopup === popupName ? null : popupName);
   };
 
+  const popupRef = useRef(null);
   useEffect(() => {
     function handleClickOutside(event) {
       const isOutsidePopup =
@@ -50,6 +65,46 @@ function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activePopup]);
 
+
+
+
+  // Popup của Menu
+  const menuItems = [
+    { icon: <Settings />, text: "Cài đặt và quyền riêng tư" },
+    { icon: <QuestionMark />, text: "Trợ giúp và hỗ trợ" },
+    { icon: <Nightlight />, text: "Màn hình & trợ năng" },
+    { icon: <Report />, text: "Đóng góp ý kiến" },
+    ...(isAdmin
+      ? [{ icon: <AdminPanelSettings />, text: "Admin", link: "/Admin" }]
+      : []),
+    { icon: <MeetingRoom />, text: "Đăng xuất", link: "/login" },
+  ];
+
+
+
+  const renderMiddleIcons = () =>
+    [
+      { icon: <Home />, title: "Trang chủ" },
+      { icon: <OndemandVideo />, title: "Video" },
+      { icon: <Storefront />, title: "MarketPlace" },
+      { icon: <Groups3 />, title: "Mọi người" },
+      { icon: <SportsEsports />, title: "Game" },
+    ].map(({ icon, title }, idx) => (
+      <li className={idx === 0 ? "border-b-[4px] border-blue-500" : ""} key={idx}>
+        <span>
+          <div></div>
+          <a title={title} aria-label={title} href="">
+            {icon}
+          </a>
+        </span>
+      </li>
+    ));
+
+  const [selectedUser, setSelectedUser] = useState(null);
+
+
+  
+  //Xử lí phần PopUp của Mess
   const messList = [
     { Avatar: "2.jpg", Name: "Thằng Đệ", Content: "Con gà mạnh" },
     { Avatar: "3.jpg", Name: "A Hai", Content: "Hôm nay đi đá banh không?" },
@@ -62,40 +117,25 @@ function Header() {
     { Avatar: "4.jpg", Name: "Nam", Content: "Hello You" },
   ];
 
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const filteredMessList = messList.filter((mess) =>
+    mess.Name.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
+ 
+  //Xử lí phần đăng xuất
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
+    if (confirmLogout) {
+      toast.success("Đăng xuất thành công!", { autoClose: 2000 });
+      setTimeout(() => {
+        BackToLogin()
+      }, 2000); // đợi toast hiện rồi mới chuyển trang
+    }
+  };
+  
 
-  const menuItems = [
-    { icon: <Settings />, text: "Cài đặt và quyền riêng tư" },
-    { icon: <QuestionMark />, text: "Trợ giúp và hỗ trợ" },
-    { icon: <Nightlight />, text: "Màn hình & trợ năng" },
-    { icon: <Report />, text: "Đóng góp ý kiến" },
-    ...(isAdmin
-      ? [{ icon: <AdminPanelSettings />, text: "Admin", link: "/Admin" }]
-      : []),
-    { icon: <MeetingRoom />, text: "Đăng xuất", link: "/login" },
-  ];
 
-  const BackToHome = () => navigate("/home");
-  const GoToProfile = () => navigate("/profile");
 
-  const renderMiddleIcons = () =>
-    [
-      { icon: <Home />, title: "Trang chủ" },
-      { icon: <OndemandVideo />, title: "Video" },
-      { icon: <Storefront />, title: "MarketPlace" },
-      { icon: <Groups3 />, title: "Mọi người" },
-      { icon: <SportsEsports />, title: "Game" },
-    ].map(({ icon, title }, idx) => (
-      <li key={idx}>
-        <span>
-          <div></div>
-          <a title={title} aria-label={title} href="">
-            {icon}
-          </a>
-        </span>
-      </li>
-    ));
-
-  const [selectedUser, setSelectedUser] = useState(null);
 
   return (
     <div className="header">
@@ -178,6 +218,8 @@ function Header() {
                 <input
                   className="w-[300px] h-[35px] outline-none bg-[#f0f2f5] rounded-r-full"
                   placeholder="Tìm kiếm trên messenger"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
                 />
               </div>
               <div className="flex gap-1">
@@ -193,7 +235,7 @@ function Header() {
                 />
               </div>
               <div className="h-[450px] overflow-y-auto scrollbar-thin">
-                {messList.map((mess, idx) => (
+                {filteredMessList.map((mess, idx) => (
                   <div
                     onClick={() => {
                       setSelectedUser(mess);
@@ -208,12 +250,8 @@ function Header() {
                       alt={mess.Name}
                     />
                     <div className="flex flex-col justify-start w-0 flex-1">
-                      <label className="font-semibold text-sm text-left">
-                        {mess.Name}
-                      </label>
-                      <label className="text-gray-500 text-xs text-left">
-                        {mess.Content}
-                      </label>
+                      <label className="font-semibold text-sm text-left">{mess.Name}</label>
+                      <label className="text-gray-500 text-xs text-left">{mess.Content}</label>
                     </div>
                     <label className="absolute right-4 p-1 bg-white rounded-full hidden group-hover:flex">
                       <MoreHoriz />
@@ -254,10 +292,14 @@ function Header() {
             </div>
             <div>
               {menuItems.map((item, idx) => (
-                <div
-                  onClick={() => item.link && navigate(item.link)}
-                  key={idx}
-                  className="acc-contend-1"
+                <div idx={item.idx}  className="acc-contend-1"
+                  onClick={() => {
+                    if (item.text === "Đăng xuất") {
+                      handleLogout();
+                    } else if (item.link) {
+                      navigate(item.link);
+                    }
+                  }}
                 >
                   <div>
                     <label className="acc_lbl">{item.icon}</label>
@@ -296,6 +338,8 @@ function Header() {
           onClose={() => setSelectedUser(null)}
         />
       )}
+    <ToastContainer position="top-right" />
+
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 
 function Admin() {
   const [activeTab, setActiveTab] = useState('posts');
@@ -27,13 +29,24 @@ function Admin() {
     user.name.toLowerCase().includes(searchUser.toLowerCase())
   );
 
-  const handleLogout = () => {
-    alert('Đăng xuất thành công!');
-    navigate("/home")
-    // Logic đăng xuất ở đây (ví dụ: xoá token, chuyển hướng về trang đăng nhập...)
-  };
+ 
 
   const navigate = useNavigate()
+  const BackToLogin = () => navigate("/home")
+
+ //Xử lí phần đăng xuất
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
+    if (confirmLogout) {
+      toast.success("Đăng xuất thành công!", { autoClose: 2000 });
+      setTimeout(() => {
+        BackToLogin()
+      }, 2000); // đợi toast hiện rồi mới chuyển trang
+    }
+  };
+  
+
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
@@ -125,6 +138,10 @@ function Admin() {
           </tbody>
         </table>
       )}
+    <ToastContainer position="top-right" />
+
+
+
     </div>
   );
 }

@@ -15,13 +15,14 @@ function home() {
   return (
     <div className="app-container ">
       <Header />
-      <div className="main-content">
-        <LeftSidebar />
-
-        <Content/>
-        
+      <div className="w-full main-content">
+        <div className='max-w-[30%]'>
+          <LeftSidebar />
+        </div>
+        <div className='h-auto mx-auto flex justify-center'>
+          <Content/>
+        </div>
         <RightSidebar/>
-
       </div>
     </div>
   )

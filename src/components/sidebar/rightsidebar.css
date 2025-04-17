@@ -1,15 +1,17 @@
 .right-side-bar {
-  width: 360px;
-  height: 100vh;
-  position: fixed;
-  right: 0;
-  top: 56px;
-  background-color: rgb(240, 242, 245);
-  border-left: 1px solid #ddd;
-  overflow-y: auto;
-  border-radius: 10px;
+    width: auto;
+    max-width: 360px;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+    top: 56px;
+    background-color: #f0f2f5;
+    /* background-color: red; */
+    overflow-y: auto;
+    border-radius: 10px;
 }
 .add-friend-bar {
+    width: 360px;
     display: flex;
     justify-content: space-between;
     margin-top: 10px;
@@ -98,11 +100,11 @@
 
 .div-user-chat{
     display: flex;
-    height: 40px;
+    height: 50px;
     align-items: center;
-    margin-bottom: 10px;
     transition: background-color 0.3s ease;
     border-radius: 5px;
+    padding: 4px;
     cursor: pointer;
 }
 
@@ -110,3 +112,8 @@
     background-color: #d0d3d6dc;
 }
 
+@media (max-width: 1334px) {
+    .right-side-bar {
+      display: none !important;
+    }
+  }

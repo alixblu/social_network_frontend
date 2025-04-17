@@ -13,6 +13,45 @@ function rightsidebar() {
         navigate('/profile'); // ✅ điều hướng tới route
     };
 
+    const listContact = [
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+        {image : "2.jpg" , name : "VĨ" , time : "2 ngày" },
+    
+    ]
   return (
     <div className='right-side-bar'>
         <div className='add-friend-bar'>
@@ -43,90 +82,28 @@ function rightsidebar() {
             </div>
         </div>
 
-        <div style={{paddingTop:'10px', borderTop:'#babbbc 1px solid', margin:'0 5px'}}> 
+        <div style={{paddingTop:'10px',paddingBottom:'15px', borderTop:'#babbbc 1px solid', margin:'0 5px'}}> 
             <div class='contact-bar'> 
                 <div> Người liên hệ</div>
                 <div><Search/></div>
             </div>
 
             <div>
-                <div className='div-user-chat'>
+                {listContact.map((item , index) => (
+                <div idx= {item.index} className='div-user-chat'>
                     <div>
-                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
+                        <img src= {`./src/assets/${item.image}`} style={{width:'40px', height:'40px', objectFit:'cover', 
                             borderRadius:'50%', marginRight:'20px'
 
                         }}/>
                     </div>
 
                     <div style={{width:'100%'}}>
-                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
+                        <div className='font-semibold font-"16px'>{item.name}</div>
                     </div>
                 </div>
-
-                <div className='div-user-chat'>
-                    <div>
-                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                            borderRadius:'50%', marginRight:'20px'
-
-                        }}/>
-                    </div>
-                        
-                    <div style={{width:'100%'}}>
-                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                    </div>
-                </div>
-
-                <div className='div-user-chat'>
-                    <div>
-                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                            borderRadius:'50%', marginRight:'20px'
-
-                        }}/>
-                    </div>
-                        
-                    <div style={{width:'100%'}}>
-                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                    </div>
-                </div>
-
-                <div className='div-user-chat'>
-                    <div>
-                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                            borderRadius:'50%', marginRight:'20px'
-
-                        }}/>
-                    </div>
-                        
-                    <div style={{width:'100%'}}>
-                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                    </div>
-                </div>
-
-                <div className='div-user-chat'>
-                    <div>
-                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                            borderRadius:'50%', marginRight:'20px'
-
-                        }}/>
-                    </div>
-                        
-                    <div style={{width:'100%'}}>
-                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                    </div>
-                </div>
-
-                <div className='div-user-chat'>
-                    <div>
-                        <img src="./src/assets/1.png" style={{width:'30px', height:'30px', objectFit:'cover', 
-                            borderRadius:'50%', marginRight:'20px'
-
-                        }}/>
-                    </div>
-                        
-                    <div style={{width:'100%'}}>
-                        <div style={{width:'100%', alignContent:'center', alignItems:'center'}}>Thành Ân</div>
-                    </div>
-                </div>
+                ))}
+                
             </div>
         </div>
     </div>
