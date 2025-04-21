@@ -6,6 +6,12 @@ export default function MessengerChatBox({ user, onClose }) {
     { sender: "me", text: "sao định đi thực tập à" },
     { sender: "other", text: "Tại bạn tui đi" },
     { sender: "other", text: "Bị áp lực" },
+    { sender: "me", text: "sao định đi thực tập à" },
+    { sender: "other", text: "Tại bạn tui đi" },
+    { sender: "other", text: "Bị áp lực" },
+    { sender: "me", text: "sao định đi thực tập à" },
+    { sender: "other", text: "Tại bạn tui đi" },
+    { sender: "other", text: "Bị áp lực" },
   ]);
   const [input, setInput] = useState("");
   const messageEndRef = useRef(null);

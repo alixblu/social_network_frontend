@@ -36,7 +36,8 @@ export function getPostItem (post){
   
 
           <div style={{display:"flex", boxSizing:"border-box", cursor:'pointer'}}>
-            <div style={{border:"4px white solid", boxSizing:"border-box", borderLeft:'0px'}}>
+            {/* <div style={{border:"4px white solid", boxSizing:"border-box", borderLeft:'0px'}}> */}
+            <div>
               <img src="./src/assets/1.png"/>
             </div>
             {/*

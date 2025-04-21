@@ -3,10 +3,9 @@
     max-width: 360px;
     height: 100vh;
     position: fixed;
-    right: 0;
+    right: 2px;
     top: 56px;
     background-color: #f0f2f5;
-    /* background-color: red; */
     overflow-y: auto;
     border-radius: 10px;
 }
@@ -15,7 +14,7 @@
     display: flex;
     justify-content: space-between;
     margin-top: 10px;
-    margin-left: 5px;
+    padding-right: 15px;
 }
 
 .contact-bar {
@@ -25,6 +24,7 @@
 }
 
 .thongbao {
+    border-radius: 5px;
     display: flex;
     height: 80px;
     cursor: pointer;

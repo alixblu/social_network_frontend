@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const handleLogin = () => {
+    axios.post('http://localhost:8080/api/users/login', { email, password })
+      .then(response => {
+        // Đăng nhập thành công, lưu thông tin người dùng và điều hướng
+        console.log('Đăng nhập thành công:', response.data);
+        // Ví dụ điều hướng đến trang chính sau khi đăng nhập thành công
+        navigate('/home');
+      })
+      .catch(error => {
+        // Xử lý lỗi khi đăng nhập thất bại
+        setError('Đăng nhập không thành công! Kiểm tra lại email và mật khẩu');
+        console.error('Lỗi đăng nhập:', error);
+      });
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -20,16 +39,24 @@ const Login = () => {
           <input
             type="text"
             placeholder="Email hoặc số điện thoại"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-3 mb-3 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <input
             type="password"
             placeholder="Mật khẩu"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-3 mb-3 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          <button className="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700">
+          <button
+            onClick={handleLogin}
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700"
+          >
             Đăng nhập
           </button>
+          {error && <p className="text-red-500 text-sm text-center mt-3">{error}</p>}
           <p className="text-blue-600 text-sm text-center mt-3 cursor-pointer hover:underline">
             Quên mật khẩu?
           </p>

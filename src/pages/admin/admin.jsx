@@ -3,10 +3,75 @@ import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 
+
+
+
+
+
+
+
+
+export function FormUser({ user, onClose, onToggleStatus }) {
+  if (!user) return null;
+
+  const isActive = user.status === "Active";
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      {/* Card chính */}
+      <div className="relative bg-white border p-6 shadow-xl rounded-md w-96">
+        {/* Nút đóng ở góc trên bên phải */}
+        <button
+          className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+          onClick={onClose}
+        >
+          &times;
+        </button>
+
+        {/* Nội dung */}
+        <h3 className="text-xl font-bold mb-4 text-center">Thông tin người dùng</h3>
+        <div className="space-y-2">
+          <p><strong>Tên:</strong> {user.name}</p>
+          <p><strong>Email:</strong> {user.email}</p>
+          <p>
+            <strong>Trạng thái:</strong>{" "}
+            <span className={isActive ? "text-green-600" : "text-red-500"}>
+              {user.status}
+            </span>
+          </p>
+        </div>
+
+        {/* Nút chuyển trạng thái tài khoản */}
+        <button
+          className={`mt-6 w-full py-2 rounded font-semibold ${
+            isActive
+              ? "bg-red-500 text-white hover:bg-red-600"
+              : "bg-green-600 text-white hover:bg-green-700"
+          }`}
+          onClick={() => onToggleStatus(user.id)}
+        >
+          {isActive ? "Khóa tài khoản" : "Mở tài khoản"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
 function Admin() {
   const [activeTab, setActiveTab] = useState('posts');
   const [searchPost, setSearchPost] = useState('');
   const [searchUser, setSearchUser] = useState('');
+  const [isOpenInfo, setOpenInfo] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const posts = [
     { id: 1, title: 'Bài viết React', content: 'Giới thiệu ReactJS' },
@@ -14,12 +79,12 @@ function Admin() {
     { id: 3, title: 'Bài viết Angular', content: 'Khái niệm Angular' },
   ];
 
-  const users = [
-    { id: 1, name: 'Nguyễn Văn A', email: 'a@gmail.com' },
-    { id: 2, name: 'Trần Thị B', email: 'b@gmail.com' },
-    { id: 3, name: 'Lê Văn C', email: 'c@gmail.com' },
-  ];
-
+  const [users, setUsers] = useState([
+    { id: 1, name: 'Nguyễn Văn A', email: 'a@gmail.com', status: "Active" },
+    { id: 2, name: 'Trần Thị B', email: 'b@gmail.com', status: "Deactivated" },
+    { id: 3, name: 'Lê Văn C', email: 'c@gmail.com', status:"Active" },
+  ]);
+  
   // Lọc dữ liệu theo thanh tìm kiếm
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchPost.toLowerCase())
@@ -43,6 +108,26 @@ function Admin() {
         BackToLogin()
       }, 2000); // đợi toast hiện rồi mới chuyển trang
     }
+  };
+  
+  //Hiển thị chi tiết thông tin
+  const PopupInformation = (user) => {
+    setOpenInfo(!isOpenInfo)
+    setSelectedUser(user)
+  }
+
+  const handleToggleStatus = (id) => {
+    const updatedUsers = users.map(user =>
+      user.id === id
+        ? {
+            ...user,
+            status: user.status === "Active" ? "Deactivated" : "Active"
+          }
+        : user
+    );
+    setUsers(updatedUsers);
+    toast.success("Cập nhật trạng thái tài khoản thành công!");
+    setOpenInfo(false);
   };
   
 
@@ -125,18 +210,24 @@ function Admin() {
               <th className="border p-2">ID</th>
               <th className="border p-2">Tên</th>
               <th className="border p-2">Email</th>
+              <th className="border p-2">Trạng thái</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map(user => (
-              <tr key={user.id}>
+              <tr onClick={ () => PopupInformation(user)} className=' hover:bg-blue-200' key={user.id}>
                 <td className="border p-2">{user.id}</td>
                 <td className="border p-2">{user.name}</td>
                 <td className="border p-2">{user.email}</td>
+                <td className= {user.status==="Active" ? "border p-2 text-green-600 font-semibold text-center" : "border p-2 text-red-500 font-semibold text-center" }>{user.status}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+
+      {isOpenInfo && selectedUser &&(
+        <FormUser user={selectedUser} onClose={() => setOpenInfo(false)} onToggleStatus={handleToggleStatus}  />
       )}
     <ToastContainer position="top-right" />
 

@@ -108,7 +108,7 @@ function Profile() {
                   {listMenu.map((item, index) => (
                     <li
                       key={index}
-                      className="py-3 px-3 rounded-[5px] font-semibold hover:bg-gray-500 "
+                      className="py-3 px-3 rounded-[5px] font-semibold hover:bg-gray-300 cursor-pointer"
                     >
                       {item}
                     </li>
@@ -125,7 +125,7 @@ function Profile() {
         </div>
 
         {/* MainContent */}
-        <div className="w-full flex justify-center bg-slate-300">
+        <div className="w-full flex justify-center bg-[#F2F4F7]">
           <div className="flex flex-col min-w-max xl:flex xl:flex-row  max-w-[1030px] mt-5 gap-4">
             {/* leftContent */}
             <div className="w-full xl:max-w-[40%]  xl:sticky top-[67px] h-full space-y-3">
@@ -231,7 +231,7 @@ function Profile() {
                 <div className="flex justify-between">
                   <h3 className="font-semibold mb-2 text-left">Ảnh đại diện</h3>
                   <p
-                    className="text-blue-500 text-sm mt-1 cursor-pointer hover:underline"
+                    className="text-blue-500 text-[15px] mt-1 cursor-pointer hover:underline"
                     onClick={handleEditClick}
                   >
                     Chỉnh sửa
@@ -254,7 +254,7 @@ function Profile() {
               <div className="text-center">
                 <div className="flex justify-between">
                   <h3 className="font-semibold mb-2 text-left">Ảnh Bìa</h3>
-                  <p className="text-blue-500 text-sm mt-1 cursor-pointer hover:underline">
+                  <p className="text-blue-500 text-[15px] mt-1 cursor-pointer hover:underline">
                     Chỉnh sửa
                   </p>
                 </div>
