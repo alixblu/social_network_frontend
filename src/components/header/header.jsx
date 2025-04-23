@@ -32,13 +32,23 @@ import "react-toastify/dist/ReactToastify.css";
 
 
 function Header() {
-  const [isAdmin, setAdmin] = useState(true);
+
+
+
+  const [isAdmin, setAdmin] = useState(false);
+
+  const [user, setUser] = useState("");
 
   //Xử lí các Navigate chuyển hướng
   const navigate = useNavigate();
   const BackToHome = () => navigate("/home");
   const GoToProfile = () => navigate("/profile");
-  const BackToLogin = () => navigate("/login");
+  const BackToLogin = () => {
+    navigate("/login", { replace: true });
+    window.location.reload();
+    sessionStorage.removeItem("user");
+  };
+
 
 
 
@@ -133,9 +143,19 @@ function Header() {
     }
   };
   
+  //Data từ sessionStorage
+  const session_user = JSON.parse(sessionStorage.getItem("user"))
 
-
-
+  useEffect(() => {
+    if (!session_user) {
+      BackToLogin()
+    }
+    if(session_user.isAdmin == true)
+      setUser(session_user)
+      setAdmin(true)
+  }, []);
+  
+  // console.log("Kiểm tra user: " + user.username)
 
   return (
     <div className="header">
@@ -168,7 +188,8 @@ function Header() {
         <img
           onClick={() => togglePopup("acc")}
           title="Tài khoản"
-          src="./src/assets/1.png"
+          // src="./src/assets/1.png"
+          src={`./src/assets/${user.avatarUrl}`}
           alt="Avatar"
         />
       </div>
@@ -277,9 +298,9 @@ function Header() {
           <div className="acc-popup">
             <div className="acc-content">
               <div onClick={GoToProfile} className="acc1">
-                <img src="./src/assets/1.png" alt="Avatar" />
+                <img src={`./src/assets/${user.avatarUrl}`} alt="Avatar" />
                 <label className="text-black font-semibold text-[17px]">
-                  Huỳnh Vĩ
+                  {user?.username || "Người dùng"}
                 </label>
               </div>
               <div className="acc2"></div>
