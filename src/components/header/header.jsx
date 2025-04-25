@@ -145,16 +145,22 @@ function Header() {
   
   //Data từ sessionStorage
   const session_user = JSON.parse(sessionStorage.getItem("user"))
-
   useEffect(() => {
+    const session_user = JSON.parse(sessionStorage.getItem("user"))
+    
     if (!session_user) {
       BackToLogin()
+      return;
     }
-    if(session_user.isAdmin == true)
-      setUser(session_user)
+    
+    console.log("username: " + session_user.username)
+    
+    setUser(session_user)
+    
+    if(session_user.isAdmin === true) {
       setAdmin(true)
+    }
   }, []);
-  
   // console.log("Kiểm tra user: " + user.username)
 
   return (
@@ -300,7 +306,7 @@ function Header() {
               <div onClick={GoToProfile} className="acc1">
                 <img src={`./src/assets/${user.avatarUrl}`} alt="Avatar" />
                 <label className="text-black font-semibold text-[17px]">
-                  {user?.username || "Người dùng"}
+                  {user?.username.trim() || "Người dùng"}
                 </label>
               </div>
               <div className="acc2"></div>
@@ -313,7 +319,7 @@ function Header() {
             </div>
             <div>
               {menuItems.map((item, idx) => (
-                <div idx={item.idx}  className="acc-contend-1"
+                <div key = {item.idx}  className="acc-contend-1"
                   onClick={() => {
                     if (item.text === "Đăng xuất") {
                       handleLogout();

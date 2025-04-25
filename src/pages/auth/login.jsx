@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -11,71 +13,41 @@ const loginSchema = z.object({
 });
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({ email: '', password: '', general: '' });
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ Sau khi đã submit thì mới check liên tục
-  useEffect(() => {
-    if (!isSubmitted) return;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
-    const result = loginSchema.safeParse({ email, password });
-    const fieldErrors = { email: '', password: '', general: '' };
+  const onSubmit = async (data) => {
+    try {
+      const response = await axios.post('http://localhost:8080/users/auth/login', data);
+      console.log('Đăng nhập thành công:', response.data);
 
-    if (!result.success) {
-      result.error.errors.forEach((err) => {
-        if (err.path[0] in fieldErrors) {
-          fieldErrors[err.path[0]] = err.message;
-        }
+      sessionStorage.setItem('user', JSON.stringify(response.data));
+
+      toast.success('Đăng nhập thành công!', {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "colored",
+      });
+
+      setTimeout(() => {
+        navigate('/home');
+      }, 2500);
+    } catch (error) {
+      console.error('Lỗi đăng nhập:', error);
+      setError('root', {
+        type: 'manual',
+        message: 'Đăng nhập không thành công! Kiểm tra lại email và mật khẩu',
       });
     }
-
-    setErrors(prev => ({ ...prev, ...fieldErrors }));
-  }, [email, password, isSubmitted]);
-
-  const handleLogin = () => {
-    setIsSubmitted(true);
-  
-    const result = loginSchema.safeParse({ email, password });
-    if (!result.success) return;
-  
-    setErrors({ email: '', password: '', general: '' });
-  
-    axios.post('http://localhost:8080/api/auth/login', { email, password })
-      .then(response => {
-        console.log('Đăng nhập thành công:', response.data);
-  
-        //Lưu thông tin user vào localStorage
-        sessionStorage.setItem('user', JSON.stringify(response.data));
-
-        toast.success('Đăng nhập thành công!', {
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
-        });
-
-        // Điều hướng
-        setTimeout(() => {
-          navigate('/home');
-        }, 2500)
-      })
-
-      .catch(error => {
-        setErrors(prev => ({
-          ...prev,
-          general: 'Đăng nhập không thành công! Kiểm tra lại email và mật khẩu',
-        }));
-        console.error('Lỗi đăng nhập:', error);
-      });
   };
-  
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -87,33 +59,34 @@ const Login = () => {
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm"
+        >
           <input
             type="text"
             placeholder="Email hoặc số điện thoại"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            {...register('email')}
             className="w-full p-3 mb-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          {errors.email && <p className="text-red-500 text-sm mb-3">{errors.email}</p>}
+          {errors.email && <p className="text-red-500 text-sm mb-3">{errors.email.message}</p>}
 
           <input
             type="password"
             placeholder="Mật khẩu"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            {...register('password')}
             className="w-full p-3 mb-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          {errors.password && <p className="text-red-500 text-sm mb-3">{errors.password}</p>}
+          {errors.password && <p className="text-red-500 text-sm mb-3">{errors.password.message}</p>}
 
           <button
-            onClick={handleLogin}
+            type="submit"
             className="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700"
           >
             Đăng nhập
           </button>
 
-          {errors.general && <p className="text-red-500 text-sm text-center mt-3">{errors.general}</p>}
+          {errors.root && <p className="text-red-500 text-sm text-center mt-3">{errors.root.message}</p>}
 
           <p className="text-blue-600 text-sm text-center mt-3 cursor-pointer hover:underline">
             Quên mật khẩu?
@@ -122,12 +95,13 @@ const Login = () => {
           <div className="border-t my-4"></div>
 
           <button
+            type="button"
             onClick={() => navigate("/register")}
             className="w-full bg-green-500 text-white font-bold py-2 rounded hover:bg-green-600"
           >
             Tạo tài khoản mới
           </button>
-        </div>
+        </form>
       </div>
       <ToastContainer />
     </div>
