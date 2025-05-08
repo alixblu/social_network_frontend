@@ -191,7 +191,7 @@ function ContentArea() {
                 }}>
                     {userInfo && (
                         <div className="container-question">
-                            <img src={`http://localhost:8080/images/${userInfo.avatarUrl}`} style={{ width: '45px', borderRadius: '50%' }} alt="User Avatar" />
+                            <img src={`http://localhost:8080/images/${userInfo.avatarUrl}`}className='w-[45px] h-[45px] rounded-full' alt="User Avatar" />
                             <span className="text-area" onClick={handleTextAreaClick}>
                                 {userInfo.username} ơi, bạn đang nghĩ gì thế?
                             </span>
