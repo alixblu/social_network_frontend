@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import '../popup/popupPost.css';
 import {
   PhotoLibrary,
-  Clear, Recommend, FavoriteBorder, ModeComment, Send
+  Clear
 } from "@mui/icons-material";
+import { posts } from '../contentArea';
+import { user } from '../contentArea';
 
-import {posts} from '../contentArea'
-import {user} from '../contentArea'
-
-function PopupPost({ onClose }) {
+function PopupPost({ onClose, userInfo }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [status, setStatus] = useState('1')
-  const [content, setcontent] = useState("")
+  const [status, setStatus] = useState('1');
+  const [content, setContent] = useState("");
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -28,88 +26,68 @@ function PopupPost({ onClose }) {
       alert("Vui lòng nhập nội dung hoặc chọn ảnh để đăng bài.");
       return;
     }
-    
+
     const count_post = posts.length + 1;
     const post = {
-      id_post:count_post,
-      id_user:user.id,
+      id_post: count_post,
+      id_user: user.id,
       content: content,
       img: selectedFile?.name || "",
       time: new Date().toLocaleString(),
       state: status,
     };
-  
+
     posts.push(post);
     console.log(posts);
     onClose();
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0, bottom: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 9999,
-      }}
-    >
-      <div className="popup-container">
-        <Clear style={{ position: 'absolute', top: '20px', right: '10px', cursor: 'pointer', color: '#555' }} onClick={onClose} />
-        <div style={{ width: '100%', textAlign: 'center', fontSize: '20px', borderBottom: '1px rgb(202 199 199) solid', marginBottom: '10px', paddingBottom: "10px" }}>Tạo bài viết</div>
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="w-[533px] bg-white rounded-lg shadow-lg p-5 relative">
+        <Clear className="absolute top-5 right-2 cursor-pointer text-gray-500" onClick={onClose} />
+        <div className="text-center text-lg border-b border-gray-300 mb-2 pb-2">Tạo bài viết</div>
 
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="./src/assets/2.jpg" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: "10px" }}>
-            <div style={{ fontWeight: 'bold' }}>Đàm Khả Di</div>
-            <select style={{ padding: '5px', borderRadius: '5px', backgroundColor: "rgb(202 199 199)", border: 'none', outline: 'none' }}
-              onChange={(e)=>{setStatus(e.target.value)}}
-            >
+        <div className="flex items-center">
+          <img src={`http://localhost:8080/images/${userInfo.avatarUrl}`} className="w-10 h-10 rounded-full" alt="User Avatar" />
+          <div className="flex flex-col ml-2">
+            <div className="font-bold">{userInfo.username}</div>
+            <select className="p-1 rounded bg-gray-300 border-none outline-none" onChange={(e) => { setStatus(e.target.value) }}>
               <option value="1">Công khai</option>
               <option value="0">Chỉ mình tôi</option>
             </select>
           </div>
         </div>
 
-        <div style={{ marginTop: '20px' }}>
+        <div className="mt-5">
           <textarea placeholder="Bạn đang nghĩ gì thế?"
-            style={{
-              width: '100%',
-              minHeight: '60px',
-              padding: '10px',
-              border: 'none',
-              outline: 'none',
-              fontSize: '14px',
-              resize: 'none',
-              whiteSpace: 'pre-wrap',
-              overflowWrap: 'break-word',
-            }} onChange={(e)=>{setcontent(e.target.value)}}>
+            className="w-full min-h-[60px] p-2 border-none outline-none text-sm resize-none"
+            onChange={(e) => { setContent(e.target.value) }}>
           </textarea>
         </div>
 
         {/* Ảnh xem trước */}
-        <div style={{ width: "100%", height: "200px", border: "1px rgb(155, 152, 152) solid", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div className="w-full h-48 border border-gray-400 flex items-center justify-center">
           {imagePreview ? (
-            <img src={imagePreview} alt="preview" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+            <img src={imagePreview} alt="preview" className="max-h-full max-w-full object-contain" />
           ) : (
-            <span style={{ color: '#999' }}>Chưa chọn ảnh</span>
+            <span className="text-gray-400">Chưa chọn ảnh</span>
           )}
         </div>
 
         {/* Nút chọn ảnh */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px 0', margin: "10px 0" }}>
-          <label htmlFor="upload-photo" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-            <div style={{ color: 'green', fontSize: 'large', marginRight: '5px' }}><PhotoLibrary /></div>
+        <div className="flex justify-center items-center py-2 mt-2">
+          <label htmlFor="upload-photo" className="flex items-center cursor-pointer">
+            <div className="text-green-600 text-xl mr-1"><PhotoLibrary /></div>
             <span>Ảnh/Video</span>
           </label>
-          <input id="upload-photo" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+          <input id="upload-photo" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
         </div>
 
-        <button style={{ width: "100%", textAlign: "center", backgroundColor: "rgb(13, 113, 233)", fontSize: "18px", padding: "5px 0", borderRadius: "8px", color: 'white', border: 'none' }} onClick={eventPost}>Đăng</button>
+        <button className="w-full text-center bg-blue-600 text-white text-lg py-2 rounded-md" onClick={eventPost}>Đăng</button>
       </div>
     </div>
-  )
+  );
 }
+
 export default PopupPost;

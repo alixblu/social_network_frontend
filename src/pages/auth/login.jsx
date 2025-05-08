@@ -27,9 +27,8 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const response = await axios.post('http://localhost:8080/users/auth/login', data);
-      console.log('Đăng nhập thành công:', response.data);
 
-      sessionStorage.setItem('user', JSON.stringify(response.data));
+      sessionStorage.setItem('token', JSON.stringify(response.data));
 
       toast.success('Đăng nhập thành công!', {
         position: "top-right",

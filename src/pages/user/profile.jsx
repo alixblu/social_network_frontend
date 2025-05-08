@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import Header from "../../components/header/header";
-import { useNavigate } from "react-router-dom";
 import {
   Add,
   Camera,
@@ -11,51 +10,137 @@ import {
   ShareRounded,
   ThumbUpOutlined,
 } from "@mui/icons-material";
+
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const editProfileSchema = z
+  .object({
+    username: z.string().min(1, "Tên không được để trống"),
+    email: z.string().email("Email không hợp lệ"),
+    newPassword: z.string().optional(),
+    confirmPassword: z.string().optional(),
+
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp",
+    path: ["confirmPassword"],
+  });
+
+
 function Profile() {
   const listMenu = [
-    "Bài viết",
-    "Giới thiệu",
-    "Bạn bè",
-    "Ảnh",
-    "Video",
-    "Check in",
-    "Xem thêm",
+    "Bài viết", "Giới thiệu", "Bạn bè", "Ảnh", "Video", "Check in", "Xem thêm",
   ];
 
   const [isOpenEdit, setOpenEdit] = useState(false);
+  const toggleEdit = () => setOpenEdit(!isOpenEdit);
 
-  const toggleEdit = () => {
-    setOpenEdit(!isOpenEdit);
-  };
-  
-  const [username, setUsername] = useState("Huỳnh Vĩ");
-  const [showFileInput, setShowFileInput] = useState(false);
+  const [user, setUser] = useState({});
+  const [File, setFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleEditClick = () => {
-    fileInputRef.current.click();
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm({
+    resolver: zodResolver(editProfileSchema),
+  });
+
+  useEffect(() => {
+    const token = JSON.parse(sessionStorage.getItem("token"));
+
+    axios.get("http://localhost:8080/users/getUserByToken", {
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`,
+      },
+    })
+      .then((response) => {
+        setUser(response.data);
+        reset(response.data);
+      })
+      .catch((error) => {
+        console.error("Lỗi lấy thông tin user:", error);
+      });
+  }, [reset]);
+
+  const handleEditClick = () => fileInputRef.current?.click();
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      console.log("Đã chọn ảnh:", file.name);
+      const previewUrl = URL.createObjectURL(file);
+      setFile(file);
+      setAvatarPreviewUrl(previewUrl);
     }
   };
-  const navigate = useNavigate();
+
+  const onSubmit = async (data) => {
+    const userId = user.id;
+    console.log(data);
+    if (!userId) {
+      toast.error("Không tìm thấy ID người dùng.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("username", data.username);
+  
+    if (data.newPassword) {
+      formData.append("password", data.newPassword);
+    }
+  
+    if (File) {
+      formData.append("avatar", File);
+    }
+  
+    try {
+      const response = await axios.put(
+        `http://localhost:8080/users/profile/${userId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${localStorage.getItem('token')}` // Add authorization header
+          },
+        }
+      );
+  
+      toast.success("Cập nhật thành công!", { autoClose: 1000 });
+      setUser(response.data);
+      setOpenEdit(false);
+  
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Error details:", error.response?.data); // Add this for debugging
+      toast.error("Lỗi khi cập nhật: " + (error.response?.data || error.message));
+    }
+  };
+
+  const [showPassword, setShowPassword] = useState(false);
+
 
   return (
     <div className="flex flex-col relative justify-center h-auto">
       <Header />
       <div className="relative">
-        {/* top */}
-        <div className="flex flex-col items-center bg-slate-400 h-[592px] w-full">
-          {/* top-1 */}
+        {/* Cover Image */}
+        <div className="flex flex-col items-center bg-gradient-to-b from-gray-800 to-white h-[592px] w-full">
           <div className="relative">
             <img
               className="w-[1100px] h-[400px] rounded-lg"
               src="./src/assets/1.png"
-              alt=""
+              alt="cover"
             />
             <button className="absolute bottom-3 right-9 bg-white px-3 py-2 rounded-md flex items-center gap-2">
               <Camera />
@@ -63,102 +148,88 @@ function Profile() {
             </button>
           </div>
 
-          {/* top-2 */}
+          {/* Profile Info */}
           <div className="absolute top-[350px] w-full max-w-[1030px] h-auto">
             <div className="flex justify-between items-center">
               <div className="flex w-full items-center gap-3">
                 <div className="p-[4px] bg-white rounded-full">
                   <img
-                    className="bg-white w-[150px] rounded-full"
-                    src="../src/assets/1.png"
-                    alt=""
+                    className="bg-white w-[150px] h-[150px] rounded-full object-cover"
+                    src={`http://localhost:8080/images/${user.avatarUrl}`}
+                    alt="avatar"
                   />
                 </div>
                 <div className="relative">
-                  <label className="text-3xl font-semibold" htmlFor="">
-                    Huỳnh Vĩ
-                  </label>
-                  <p className="absolute top-[40px]">942 người bạn</p>
+                  <label className="text-3xl font-semibold">{user.username}</label>
+                  <p className="absolute top-[40px] text-gray-500">942 người bạn</p>
                 </div>
               </div>
               <div className="relative w-full flex justify-end gap-3">
-                <button className="flex items-center px-2 py-2 bg-slate-500 rounded-lg">
+                <button className="flex items-center px-2 py-2 bg-[#E2E5E9] rounded-lg">
                   <Add />
                   Thêm vào tin
                 </button>
                 <button
                   onClick={toggleEdit}
-                  className="flex items-center px-2 py-2 bg-slate-500 rounded-lg"
+                  className="flex items-center px-2 py-2 bg-[#E2E5E9] rounded-lg"
                 >
                   <Edit />
                   Chỉnh sửa trang cá nhân
                 </button>
-                <button className="absolute right-0 top-[45px] px-2 py-2 bg-slate-500 rounded-lg">
-                  {" "}
-                  <KeyboardArrowDown />{" "}
+                <button className="absolute right-0 top-[45px] px-3 py-2 bg-[#E2E5E9] rounded-lg">
+                  <KeyboardArrowDown />
                 </button>
               </div>
             </div>
+
             <hr className="mt-5 mb-3" />
 
-            {/* ListMenu */}
-            <div>
-              <div className="flex items-center justify-between">
-                <ul className="flex gap-0">
-                  {listMenu.map((item, index) => (
-                    <li
-                      key={index}
-                      className="py-3 px-3 rounded-[5px] font-semibold hover:bg-gray-300 cursor-pointer"
-                    >
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div>
-                  <button className="px-3 py-1 bg-slate-300 rounded-lg">
-                    <MoreHoriz />
-                  </button>
-                </div>
-              </div>
+            <div className="flex items-center justify-between">
+              <ul className="flex gap-0">
+                {listMenu.map((item, index) => (
+                  <li
+                    key={index}
+                    className={`py-3 px-3 rounded-[5px] font-semibold hover:bg-gray-300 cursor-pointer ${
+                      index === 0 ? 'text-blue-500' : 'text-gray-600'
+                    }`}
+                  >
+                    {item}
+                  </li>
+                 
+                ))}
+              </ul>
+              <button className="px-3 py-1 bg-slate-300 rounded-lg">
+                <MoreHoriz />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* MainContent */}
+        {/* Nội dung chính */}
         <div className="w-full flex justify-center bg-[#F2F4F7]">
-          <div className="flex flex-col min-w-max xl:flex xl:flex-row  max-w-[1030px] mt-5 gap-4">
-            {/* leftContent */}
-            <div className="w-full xl:max-w-[40%]  xl:sticky top-[67px] h-full space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex flex-col bg-white rounded-lg p-3">
-                  <label className="text-2xl  font-semibold" htmlFor="">
-                    Giới thiệu
-                  </label>
-                  <button className="bg-gray-300  py-1 font-semibold rounded-md my-4">
-                    Thêm tiểu sử
-                  </button>
-                  <label htmlFor="">
-                    Đã học tại THPT Nguyễn Du - Hoài Nhơn - Bình Định
-                  </label>
-                  <label htmlFor="">
-                    Sống tại Hoai Nhon, Bình Định, VietNam
-                  </label>
-                  <label htmlFor="">Có 30 người theo dõi</label>
-                  <button className="bg-gray-300  py-1 font-semibold rounded-md mt-2">
-                    Chỉnh sửa chi tiết
-                  </button>
-                  <br />
-                  <button className="bg-gray-300 py-1 font-semibold rounded-md">
-                    Thêm nội dung đáng chú ý
-                  </button>
-                </div>
-              ))}
+          <div className="flex flex-col xl:flex-row max-w-[1030px] mt-5 gap-4">
+            {/* Giới thiệu */}
+            <div className="w-full xl:max-w-[40%] xl:sticky top-[67px] space-y-3">
+              <div className="flex flex-col bg-white rounded-lg p-3">
+                <label className="text-2xl font-semibold">Giới thiệu</label>
+                <button className="bg-gray-300 py-1 font-semibold rounded-md my-4">
+                  Thêm tiểu sử
+                </button>
+                <label>Đã học tại THPT Nguyễn Du - Hoài Nhơn - Bình Định</label>
+                <label>Sống tại Hoài Nhơn, Bình Định, VietNam</label>
+                <label>Có 30 người theo dõi</label>
+                <button className="bg-gray-300 py-1 font-semibold rounded-md mt-2">
+                  Chỉnh sửa chi tiết
+                </button>
+                <button className="bg-gray-300 py-1 font-semibold rounded-md mt-2">
+                  Thêm nội dung đáng chú ý
+                </button>
+              </div>
             </div>
 
-            {/* rightContent */}
-            <div className="w-auto xl:max-w-[60%]  space-y-3">
-              <div className=" mx-auto bg-white shadow-md p-4 rounded-xl">
-                {/* Header */}
+            {/* Bài viết */}
+            <div className="w-auto xl:max-w-[60%] space-y-3">
+              <div className="bg-white shadow-md p-4 rounded-xl">
                 <div className="flex items-center gap-3">
                   <img
                     src="https://i.pravatar.cc/150?img=3"
@@ -166,31 +237,18 @@ function Profile() {
                     className="w-10 h-10 rounded-full"
                   />
                   <div>
-                    <h4 className="font-semibold text-gray-800">
-                      Nguyễn Văn A
-                    </h4>
+                    <h4 className="font-semibold text-gray-800">Nguyễn Văn A</h4>
                     <p className="text-sm text-gray-500">3 giờ trước · 🌍</p>
                   </div>
                 </div>
-
-                {/* Content */}
-                <div className="mt-3">
-                  <p className="text-gray-800 text-base">
-                    Cuối tuần chill cùng bạn bè 🍃☕ Ai muốn đi Đà Lạt giơ tay
-                    nào 🙋‍♂️🙋‍♀️
-                  </p>
+                <div className="mt-3 text-gray-800">
+                  Cuối tuần chill cùng bạn bè 🍃☕ Ai muốn đi Đà Lạt giơ tay nào 🙋‍♂️🙋‍♀️
                 </div>
-
-                {/* Image */}
-                <div className="mt-3">
-                  <img
-                    src="../src/assets/1.png"
-                    alt="post"
-                    className="w-full rounded-md"
-                  />
-                </div>
-
-                {/* Interaction buttons */}
+                <img
+                  src="../src/assets/1.png"
+                  alt="post"
+                  className="w-full mt-3 rounded-md"
+                />
                 <div className="flex justify-between items-center mt-4 border-t pt-2 text-gray-600 text-sm">
                   <button className="hover:text-blue-500 flex items-center gap-1">
                     <ThumbUpOutlined /> Thích
@@ -199,7 +257,7 @@ function Profile() {
                     <ChatBubbleOutline /> Bình luận
                   </button>
                   <button className="hover:text-blue-500 flex items-center gap-1">
-                    ↗<ShareRounded /> Chia sẻ
+                    <ShareRounded /> Chia sẻ
                   </button>
                 </div>
               </div>
@@ -207,102 +265,114 @@ function Profile() {
           </div>
         </div>
       </div>
-      {/* popup-Edit  */}
-      {isOpenEdit && (
+
+
+      {/* Popup chỉnh sửa */}
+      {isOpenEdit && (  
         <>
-          {/* Overlay mờ nền */}
           <div className="fixed inset-0 bg-black bg-opacity-40 z-40" />
 
-          {/* Modal content */}
-          <div className="fixed top-[50px] left-1/2 -translate-x-1/2 w-full  max-w-[700px] max-h-[620px] overflow-y-auto bg-white rounded-xl shadow-lg z-50 scrollbar-hide">
-            <div className="sticky top-0 flex justify-between items-center p-4 border-b bg-white">
+          <div className="fixed top-[50px] left-1/2 -translate-x-1/2 w-full max-w-[700px] bg-white rounded-xl shadow-lg z-50 max-h-[600px] overflow-y-auto scrollbar-hide">
+            <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-lg font-semibold">Chỉnh sửa trang cá nhân</h2>
               <button
                 onClick={toggleEdit}
-                className="text-gray-500 hover:text-black text-xl rounded-full bg-slate-200 flex items-center justify-center w-8 h-8"
+                className="text-xl text-gray-600 hover:text-black"
               >
                 &times;
               </button>
             </div>
 
-            <div className="  p-4 space-y-8">
-              {/* Ảnh đại diện */}
+            <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-6">
               <div className="text-center">
-                <div className="flex justify-between">
-                  <h3 className="font-semibold mb-2 text-left">Ảnh đại diện</h3>
-                  <p
-                    className="text-blue-500 text-[15px] mt-1 cursor-pointer hover:underline"
-                    onClick={handleEditClick}
-                  >
-                    Chỉnh sửa
-                  </p>
-                </div>
+                <h3 className="font-semibold mb-2">Ảnh đại diện</h3>
                 <img
-                  src="./src/assets/1.png"
+                  src={avatarPreviewUrl || `http://localhost:8080/images/${user.avatarUrl}`}
                   className="w-[120px] h-[120px] rounded-full mx-auto object-cover"
+                  alt="avatar"
                 />
                 <input
                   type="file"
                   accept="image/*"
-                  className="hidden"
                   ref={fileInputRef}
                   onChange={handleFileChange}
+                  className="hidden"
                 />
+                <p
+                  className="text-blue-500 text-sm mt-2 cursor-pointer hover:underline"
+                  onClick={handleEditClick}
+                >
+                  Chỉnh sửa
+                </p>
               </div>
 
-              {/* Ảnh bìa */}
-              <div className="text-center">
-                <div className="flex justify-between">
-                  <h3 className="font-semibold mb-2 text-left">Ảnh Bìa</h3>
-                  <p className="text-blue-500 text-[15px] mt-1 cursor-pointer hover:underline">
-                    Chỉnh sửa
-                  </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="font-semibold">Tên người dùng:</label>
+                  <input
+                    className="w-full bg-gray-200 rounded-md p-2 mt-1"
+                    {...register("username")}
+                  />
+                  {errors.username && (
+                    <p className="text-red-500 text-sm">{errors.username.message}</p>
+                  )}
                 </div>
-                <img
-                  src="./src/assets/1.png"
-                  className="rounded-lg mx-auto max-h-[150px] object-cover"
-                />
-              </div>
-              <div className="flex flex-col justify-center items-center">
-                <div className="w-full max-w-[500px] space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="font-semibold" htmlFor="">
-                      Tên người dùng:{" "}
-                    </label>
-                    <input
-                      className="w-80 h-10 bg-gray-300 font-semibold rounded-md outline-none p-2"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      type="text"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <label className="font-semibold" htmlFor="">
-                      Email:{" "}
-                    </label>
-                    <input
-                      className="w-80 h-10 bg-gray-300 rounded-md  outline-none p-2"
-                      type="email"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <label className="font-semibold" htmlFor="">
-                      Mật khẩu:{" "}
-                    </label>
-                    <input
-                      className="w-80 h-10 bg-gray-300 rounded-md  outline-none p-2"
-                      type="password"
-                    />
-                  </div>
-                  <div className="flex justify-center items-center pt-5">
-                    <button className="px-4 py-2 font-semibold bg-green-300 rounded-full">
-                      Chỉnh sửa
-                    </button>
-                  </div>
+
+                <div>
+                  <label className="font-semibold">Email:</label>
+                  <input
+                    type="email"
+                    readOnly
+                    className="w-full bg-gray-200 rounded-md p-2 mt-1"
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="newPassword" className="font-semibold">
+                    Mật khẩu mới:
+                  </label>
+                  <input
+                    id="newPassword"
+                    type="password"
+                    className="w-full bg-gray-200 rounded-md p-2 mt-1"
+                    {...register("newPassword")}
+                  />
+                  {errors.newPassword && (
+                    <p className="text-red-500 text-sm">{errors.newPassword.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="font-semibold">
+                    Xác nhận mật khẩu:
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    className="w-full bg-gray-200 rounded-md p-2 mt-1"
+                    {...register("confirmPassword")}
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+                  )}
                 </div>
               </div>
-            </div>
+
+              <div className="text-right">
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </form>
           </div>
+
         </>
       )}
     </div>

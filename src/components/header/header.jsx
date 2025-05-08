@@ -28,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import MessengerChatBox from "../ui/chatbox";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios"
 
 
 
@@ -46,7 +47,7 @@ function Header() {
   const BackToLogin = () => {
     navigate("/login", { replace: true });
     window.location.reload();
-    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
   };
 
 
@@ -91,19 +92,25 @@ function Header() {
   ];
 
 
+  // Thêm các đường link và hàm navigate cho middle icons
+  const handleNavigate = (path) => {
+    navigate(path);
+    // Đóng tất cả popup nếu có
+    setActivePopup(null);
+  };
 
   const renderMiddleIcons = () =>
     [
-      { icon: <Home />, title: "Trang chủ" },
-      { icon: <OndemandVideo />, title: "Video" },
-      { icon: <Storefront />, title: "MarketPlace" },
-      { icon: <Groups3 />, title: "Mọi người" },
-      { icon: <SportsEsports />, title: "Game" },
-    ].map(({ icon, title }, idx) => (
+      { icon: <Home />, title: "Trang chủ", path: "/home" },
+      { icon: <OndemandVideo />, title: "Video", path: "/video" },
+      { icon: <Storefront />, title: "MarketPlace", path: "/marketplace" },
+      { icon: <Groups3 />, title: "Mọi người", path: "/people" },
+      { icon: <SportsEsports />, title: "Game", path: "/game" },
+    ].map(({ icon, title, path }, idx) => (
       <li className={idx === 0 ? "border-b-[4px] border-blue-500" : ""} key={idx}>
-        <span>
+        <span onClick={() => handleNavigate(path)}>
           <div></div>
-          <a title={title} aria-label={title} href="">
+          <a title={title} aria-label={title} href="#" onClick={(e) => e.preventDefault()}>
             {icon}
           </a>
         </span>
@@ -144,24 +151,26 @@ function Header() {
   };
   
   //Data từ sessionStorage
-  const session_user = JSON.parse(sessionStorage.getItem("user"))
   useEffect(() => {
-    const session_user = JSON.parse(sessionStorage.getItem("user"))
-    
-    if (!session_user) {
-      BackToLogin()
+    const token = JSON.parse(sessionStorage.getItem("token"));
+    if (!token) {
+      BackToLogin();
       return;
     }
-    
-    console.log("username: " + session_user.username)
-    
-    setUser(session_user)
-    
-    if(session_user.isAdmin === true) {
-      setAdmin(true)
-    }
+    console.log(token)
+    axios.get("http://localhost:8080/users/getUserByToken", {
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`
+      }
+    })
+    .then(response => {
+      setUser(response.data);
+      setAdmin(response.data.isAdmin);
+    })
+    .catch(error => {
+      console.error("Lỗi lấy thông tin user:", error);
+    });
   }, []);
-  // console.log("Kiểm tra user: " + user.username)
 
   return (
     <div className="header">
@@ -195,7 +204,7 @@ function Header() {
           onClick={() => togglePopup("acc")}
           title="Tài khoản"
           // src="./src/assets/1.png"
-          src={`./src/assets/${user.avatarUrl}`}
+          src={`http://localhost:8080/images/${user.avatarUrl}`}
           alt="Avatar"
         />
       </div>
@@ -304,9 +313,9 @@ function Header() {
           <div className="acc-popup">
             <div className="acc-content">
               <div onClick={GoToProfile} className="acc1">
-                <img src={`./src/assets/${user.avatarUrl}`} alt="Avatar" />
+                <img src={`http://localhost:8080/images/${user.avatarUrl}`} alt="Avatar" />
                 <label className="text-black font-semibold text-[17px]">
-                  {user?.username.trim() || "Người dùng"}
+                  {user?.username|| "Người dùng"}
                 </label>
               </div>
               <div className="acc2"></div>
@@ -319,7 +328,7 @@ function Header() {
             </div>
             <div>
               {menuItems.map((item, idx) => (
-                <div key = {item.idx}  className="acc-contend-1"
+                <div key={idx} className="acc-contend-1"
                   onClick={() => {
                     if (item.text === "Đăng xuất") {
                       handleLogout();
