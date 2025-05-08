@@ -3,8 +3,6 @@ import {
   PhotoLibrary,
   Clear
 } from "@mui/icons-material";
-import { posts } from '../contentArea';
-import { user } from '../contentArea';
 
 function PopupPost({ onClose, userInfo }) {
   const [imagePreview, setImagePreview] = useState(null);
@@ -26,19 +24,6 @@ function PopupPost({ onClose, userInfo }) {
       alert("Vui lòng nhập nội dung hoặc chọn ảnh để đăng bài.");
       return;
     }
-
-    const count_post = posts.length + 1;
-    const post = {
-      id_post: count_post,
-      id_user: user.id,
-      content: content,
-      img: selectedFile?.name || "",
-      time: new Date().toLocaleString(),
-      state: status,
-    };
-
-    posts.push(post);
-    console.log(posts);
     onClose();
   };
 
