@@ -27,24 +27,30 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const response = await axios.post('http://localhost:8080/users/auth/login', data);
-
+  
       sessionStorage.setItem('token', JSON.stringify(response.data));
-
+  
       toast.success('Đăng nhập thành công!', {
         position: "top-right",
         autoClose: 2000,
         theme: "colored",
       });
-
+  
       setTimeout(() => {
         navigate('/home');
-      }, 2500);
+      }, 2000);
     } catch (error) {
-      console.error('Lỗi đăng nhập:', error);
-      setError('root', {
-        type: 'manual',
-        message: 'Đăng nhập không thành công! Kiểm tra lại email và mật khẩu',
+      // Lấy thông báo lỗi từ backend (nếu có)
+      const errorMessage = error.response?.data || 'Đăng nhập không thành công! Kiểm tra lại email và mật khẩu';
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "colored",
       });
+      // setError('root', {
+      //   type: 'manual',
+      //   message: errorMessage,
+      // });
     }
   };
 

@@ -38,8 +38,10 @@ function Profile() {
   ];
 
   const [isOpenEdit, setOpenEdit] = useState(false);
-  const toggleEdit = () => setOpenEdit(!isOpenEdit);
-
+  const toggleEdit = () => {
+    setAvatarPreviewUrl("")
+    setOpenEdit(!isOpenEdit);
+  }
   const [user, setUser] = useState({});
   const [File, setFile] = useState(null);
   const fileInputRef = useRef(null);
@@ -109,7 +111,7 @@ function Profile() {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${localStorage.getItem('token')}` // Add authorization header
+            "Authorization": `Bearer ${sessionStorage.getItem('token')}` // Add authorization header
           },
         }
       );

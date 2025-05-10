@@ -52,7 +52,7 @@ function PopupPost({ onClose, userInfo }) {
         </div>
 
         {/* Ảnh xem trước */}
-        <div className="w-full h-48 border border-gray-400 flex items-center justify-center">
+        <div className="w-full h-48 border border-gray-400 flex items-center justify-center rounded-md p-2">
           {imagePreview ? (
             <img src={imagePreview} alt="preview" className="max-h-full max-w-full object-contain" />
           ) : (

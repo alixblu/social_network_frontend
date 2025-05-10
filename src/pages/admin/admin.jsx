@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
-
+import axios from "axios" 
 
 
 
@@ -13,8 +13,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 export function FormUser({ user, onClose, onToggleStatus }) {
   if (!user) return null;
-
-  const isActive = user.status === "Active";
+  // console.log(user)
+  const isActive = user.status === "ACTIVE";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -31,14 +31,18 @@ export function FormUser({ user, onClose, onToggleStatus }) {
         {/* Nội dung */}
         <h3 className="text-xl font-bold mb-4 text-center">Thông tin người dùng</h3>
         <div className="space-y-2">
-          <p><strong>Tên:</strong> {user.name}</p>
+          <p><strong>Tên:</strong> {user.username}</p>
           <p><strong>Email:</strong> {user.email}</p>
+          <p><strong>Ngày tạo tài khoản:</strong> {user.createdAt}</p>
+          <p><strong>Lần cập nhật gần nhất:</strong> {user.updatedAt}</p>
+
           <p>
             <strong>Trạng thái:</strong>{" "}
             <span className={isActive ? "text-green-600" : "text-red-500"}>
               {user.status}
             </span>
           </p>
+
         </div>
 
         {/* Nút chuyển trạng thái tài khoản */}
@@ -62,42 +66,35 @@ export function FormUser({ user, onClose, onToggleStatus }) {
 
 
 
-
-
-
-
 function Admin() {
   const [activeTab, setActiveTab] = useState('posts');
   const [searchPost, setSearchPost] = useState('');
   const [searchUser, setSearchUser] = useState('');
   const [isOpenInfo, setOpenInfo] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-
+  const [users, setUsers] = useState([]);
   const posts = [
     { id: 1, title: 'Bài viết React', content: 'Giới thiệu ReactJS' },
     { id: 2, title: 'Bài viết Vue', content: 'Nội dung VueJS cơ bản' },
     { id: 3, title: 'Bài viết Angular', content: 'Khái niệm Angular' },
   ];
 
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Nguyễn Văn A', email: 'a@gmail.com', status: "Active" },
-    { id: 2, name: 'Trần Thị B', email: 'b@gmail.com', status: "Deactivated" },
-    { id: 3, name: 'Lê Văn C', email: 'c@gmail.com', status:"Active" },
-  ]);
-  
+
   // Lọc dữ liệu theo thanh tìm kiếm
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchPost.toLowerCase())
   );
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchUser.toLowerCase())
+    user.username.toLowerCase().includes(searchUser.toLowerCase())
   );
+  
 
  
 
   const navigate = useNavigate()
-  const BackToLogin = () => navigate("/home")
+  const BackToHome = () => navigate("/home")
+  const BackToLogin = () => navigate("/login")
 
  //Xử lí phần đăng xuất
   const handleLogout = () => {
@@ -105,7 +102,7 @@ function Admin() {
     if (confirmLogout) {
       toast.success("Đăng xuất thành công!", { autoClose: 2000 });
       setTimeout(() => {
-        BackToLogin()
+        BackToHome()
       }, 2000); // đợi toast hiện rồi mới chuyển trang
     }
   };
@@ -116,19 +113,54 @@ function Admin() {
     setSelectedUser(user)
   }
 
-  const handleToggleStatus = (id) => {
-    const updatedUsers = users.map(user =>
-      user.id === id
-        ? {
-            ...user,
-            status: user.status === "Active" ? "Deactivated" : "Active"
-          }
-        : user
-    );
-    setUsers(updatedUsers);
-    toast.success("Cập nhật trạng thái tài khoản thành công!");
-    setOpenInfo(false);
+  const fetchUsers = () => {
+    axios.get('http://localhost:8080/users/non-admin')
+      .then(response => setUsers(response.data))
+      .catch(error => toast.error("Không thể lấy dữ liệu người dùng!"));
   };
+  
+  const checkAdmin = () =>{
+    const token = JSON.parse(sessionStorage.getItem("token"));
+    if(token==null){
+      BackToLogin()
+    }
+    axios.get("http://localhost:8080/users/getUserByToken", {
+          headers: {
+            Authorization: `Bearer ${token.accessToken}`
+          } 
+        })
+        .then(response => {
+          if(!response.data.isAdmin){
+            BackToHome()
+          }
+        })
+        .catch(error => {
+          console.error("Lỗi lấy thông tin user:", error);
+        });
+  }
+
+  // Sửa useEffect:
+  useEffect(() => {
+    checkAdmin();
+    fetchUsers(); // chỉ fetch 1 lần
+  }, []);
+
+  
+  const handleToggleStatus = (id) => {
+    const currentStatus = selectedUser?.status;
+    const newStatus = currentStatus === "ACTIVE" ? "BANNED" : "ACTIVE";
+  
+    axios.put(`http://localhost:8080/users/${id}/status`, { status: newStatus })
+      .then(() => {
+        toast.success("Cập nhật trạng thái tài khoản thành công!", { autoClose: 1000 });
+
+        fetchUsers();
+        setOpenInfo(false);
+      })
+      .catch(() => toast.error("Thao tác thất bại!"));
+  };
+  
+ 
   
 
 
@@ -207,19 +239,19 @@ function Admin() {
         <table className="w-full border-collapse border border-gray-300">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border p-2">ID</th>
-              <th className="border p-2">Tên</th>
-              <th className="border p-2">Email</th>
-              <th className="border p-2">Trạng thái</th>
+              <th className="border p-2 text-center">ID</th>
+              <th className="border p-2 text-center">Tên</th>
+              <th className="border p-2 text-center">Email</th>
+              <th className="border p-2 text-center">Trạng thái</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map(user => (
               <tr onClick={ () => PopupInformation(user)} className=' hover:bg-blue-200' key={user.id}>
-                <td className="border p-2">{user.id}</td>
-                <td className="border p-2">{user.name}</td>
-                <td className="border p-2">{user.email}</td>
-                <td className= {user.status==="Active" ? "border p-2 text-green-600 font-semibold text-center" : "border p-2 text-red-500 font-semibold text-center" }>{user.status}</td>
+                <td className="border p-2 text-center">{user.id}</td>
+                <td className="border p-2 text-center">{user.username}</td>
+                <td className="border p-2 text-center" >{user.email}</td>
+                <td className= {user.status==="ACTIVE" ? "border p-2 text-green-600 font-semibold text-center" : "border p-2 text-red-500 font-semibold text-center" }>{user.status}</td>
               </tr>
             ))}
           </tbody>
