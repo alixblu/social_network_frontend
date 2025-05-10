@@ -1,9 +1,7 @@
-// ... các import giữ nguyên
 import { useEffect, useRef, useState } from "react";
-import { Button } from "../../components/ui/button";
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { Card, CardContent } from "../../components/ui/card";
-import { UserIcon, UsersIcon, GiftIcon, ListIcon, HomeIcon, MoreVertical } from "lucide-react";
+import { UserIcon, UsersIcon, ListIcon, HomeIcon, MoreVertical } from "lucide-react";
 import Header from '../../components/header/header';
 import './FriendsPage.css';
 
@@ -67,7 +65,7 @@ const FriendCard = ({ name, mutual, avatar }) => (
       <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
       <div className="font-semibold">{name}</div>
       <div className="text-sm text-gray-500 min-h-[1.25rem]">
-        {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
+        {mutual > 0 ? `${mutual} bạn chung` : <span> </span>}
       </div>
       <div className="flex justify-center gap-2 mt-2">
         <button className="friend-action confirm">Xác nhận</button>
@@ -101,7 +99,7 @@ const FriendCardSimple = ({ name, mutual, avatar, onBlock }) => {
         <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
         <div className="font-semibold">{name}</div>
         <div className="text-sm text-gray-500 min-h-[1.25rem]">
-          {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
+          {mutual > 0 ? `${mutual} bạn chung` : <span> </span>}
         </div>
         <button
           onClick={() => setShowMenu(!showMenu)}
@@ -143,47 +141,29 @@ const BlockedFriendCard = ({ name, avatar, onUnblock }) => (
     </CardContent>
   </Card>
 );
-const FriendSuggestionCard = ({ name, mutual, avatar, onBlock, onAddFriend }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-    if (showMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showMenu]);
-
-  return (
-    <Card className="w-60 relative">
-      <CardContent className="p-4 text-center">
-        <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
-        <div className="font-semibold">{name}</div>
-        <div className="text-sm text-gray-500 min-h-[1.25rem]">
-          {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
-        </div>
-        <div className="flex justify-center gap-2 mt-2">
-          <button onClick={onAddFriend} className="friend-action confirm">Thêm bạn</button>
-          <button onClick={() => onBlock({ name, avatar })} className="friend-action delete">Gỡ</button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+const NonfriendCard = ({ name, mutual, avatar, onAddFriend }) => (
+  <Card className="w-60">
+    <CardContent className="p-4 text-center">
+      <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <div className="font-semibold">{name}</div>
+      <div className="text-sm text-gray-500 min-h-[1.25rem]">
+        {mutual > 0 ? `${mutual} bạn chung` : <span> </span>}
+      </div>
+      <div className="flex justify-center gap-2 mt-2">
+        <button onClick={onAddFriend} className="friend-action confirm">Thêm bạn</button>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export default function FriendsPage() {
   const [tab, setTab] = useState("Trang chủ");
-  const [search, setSearch] = useState("");
+  const [homeSearch, setHomeSearch] = useState("");
+  const [friendRequestSearch, setFriendRequestSearch] = useState("");
+  const [allFriendsSearch, setAllFriendsSearch] = useState("");
   const [blockedSearch, setBlockedSearch] = useState("");
   const [blockedFriends, setBlockedFriends] = useState([]);
-  const [showMoreRequests, setShowMoreRequests] = useState(false);
   const [showMoreSuggestions, setShowMoreSuggestions] = useState(false);
 
   const handleBlock = (friend) => {
@@ -194,6 +174,10 @@ export default function FriendsPage() {
     setBlockedFriends((prev) => prev.filter((f) => f.name !== name));
   };
 
+  const handleAddFriend = (friend) => {
+    console.log(`Thêm bạn: ${friend.name}`);
+  };
+
   const visibleFriends = allFriendsData.filter(
     (f) => !blockedFriends.some((b) => b.name === f.name)
   );
@@ -201,8 +185,6 @@ export default function FriendsPage() {
   const filteredBlockedFriends = blockedFriends.filter((f) =>
     f.name.toLowerCase().includes(blockedSearch.toLowerCase())
   );
-
-  const visibleRequests = showMoreRequests ? friends : friends.slice(0, 8);
 
   const suggestions = allFriendsData.filter(
     (f) =>
@@ -214,6 +196,10 @@ export default function FriendsPage() {
     ? suggestions
     : suggestions.slice(0, 8);
 
+  const searchResults = allFriendsData.filter((f) =>
+    f.name.toLowerCase().includes(homeSearch.toLowerCase())
+  );
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
@@ -222,33 +208,41 @@ export default function FriendsPage() {
         <div className="flex-1 overflow-y-auto p-6">
           {tab === "Trang chủ" && (
             <div>
-              <h2 className="text-xl font-semibold mb-2">Tất cả lời mời kết bạn</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-                {visibleRequests.map((f) => (
-                  <FriendCard key={f.name} {...f} />
-                ))}
-              </div>
-              {friends.length > 8 && (
-                <div className="text-center mt-4">
-                  <button
-                    className="text-blue-600 hover:underline"
-                    onClick={() => setShowMoreRequests(!showMoreRequests)}
-                  >
-                    {showMoreRequests ? "Ẩn bớt" : "Xem thêm"}
-                  </button>
+              <h2 className="text-xl font-semibold mb-2">
+                {homeSearch ? "Kết quả tìm kiếm" : "Gợi ý kết bạn"}
+              </h2>
+              <input
+                type="text"
+                placeholder="Tìm kiếm ..."
+                value={homeSearch}
+                onChange={(e) => setHomeSearch(e.target.value)}
+                className="w-full max-w-md px-4 py-2 border rounded mb-4"
+              />
+              {homeSearch && (
+                <div className="mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((f) => (
+                        <NonfriendCard
+                          key={f.name}
+                          {...f}
+                          onAddFriend={() => handleAddFriend(f)}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-gray-500 italic">Không tìm thấy kết quả.</div>
+                    )}
+                  </div>
+                  <div className="w-full h-px bg-gray-300 my-4"></div>
                 </div>
               )}
-
-              <div className="w-full h-px bg-gray-300 my-4"></div>
-
               <h2 className="text-xl font-semibold mb-2">Gợi ý kết bạn</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {visibleSuggestions.map((f) => (
-                  <FriendSuggestionCard
+                  <NonfriendCard
                     key={f.name}
                     {...f}
-                    onBlock={handleBlock}
-                    onAddFriend={() => {}}
+                    onAddFriend={() => handleAddFriend(f)}
                   />
                 ))}
               </div>
@@ -264,20 +258,28 @@ export default function FriendsPage() {
               )}
             </div>
           )}
-        
 
-            {tab === "Lời mời kết bạn" && (
-              <div>
-                <h1 className="text-2xl font-bold mb-4">Lời mời kết bạn</h1>
-                <ScrollArea className="h-full pr-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {friends.map((f) => (
+          {tab === "Lời mời kết bạn" && (
+            <div>
+              <h1 className="text-2xl font-bold mb-4">Lời mời kết bạn</h1>
+              <input
+                type="text"
+                placeholder="Tìm kiếm lời mời..."
+                value={friendRequestSearch}
+                onChange={(e) => setFriendRequestSearch(e.target.value)}
+                className="w-full max-w-md px-4 py-2 border rounded mb-4"
+              />
+              <ScrollArea className="h-full pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {friends
+                    .filter((f) => f.name.toLowerCase().includes(friendRequestSearch.toLowerCase()))
+                    .map((f) => (
                       <FriendCard key={f.name} {...f} />
                     ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
           {tab === "Tất cả bạn bè" && (
             <div>
@@ -285,14 +287,14 @@ export default function FriendsPage() {
               <input
                 type="text"
                 placeholder="Tìm kiếm bạn bè..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={allFriendsSearch}
+                onChange={(e) => setAllFriendsSearch(e.target.value)}
                 className="w-full max-w-md px-4 py-2 border rounded mb-4"
               />
               <ScrollArea className="h-full pr-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {visibleFriends
-                    .filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
+                    .filter((f) => f.name.toLowerCase().includes(allFriendsSearch.toLowerCase()))
                     .map((f) => (
                       <FriendCardSimple key={f.name} {...f} onBlock={handleBlock} />
                     ))}
