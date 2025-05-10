@@ -44,25 +44,32 @@ export function getPostItem(post) {
             {/* Reactions */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', margin: "0 10px", padding: '10px 0', alignItems: 'center', borderBottom: '1px rgb(202, 199, 199) solid' }}>
-                    <div>
-                        <span><Recommend /></span>
-                        <span><FavoriteBorder /></span>
+                    <div className='flex items-center'> 
+                        <span><Recommend className="text-blue-500" /></span>
                         <span style={{ marginLeft: '3px' }}>99</span>
                     </div>
                     <div>
-                        <span style={{ marginRight: '2px' }}>11</span>
-                        <span style={{ marginRight: '10px' }}><ModeComment /></span>
-                        <span style={{ marginRight: '2px' }}>2</span>
-                        <span><Send /></span>
+                        <span className='text-gray-500 text-sm mr-2' >11 Bình luận</span>
+                        <span className='text-gray-500 text-sm mr-2'>2 Chia sẽ</span>
                     </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-around', margin: '10px 0', paddingBottom: '10px' }}>
-                    <div><span><Recommend /></span><span>Thích</span></div>
-                    <div><span><ModeComment /></span><span>Bình luận</span></div>
-                    <div><span><Send /></span><span>Chia sẻ</span></div>
+                <div className="flex justify-around my-2 pb-2">
+                    <div className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-6 py-2 rounded-lg transition duration-200">
+                        <span><Recommend className='text-gray-500' /></span>
+                        <span>Thích</span>
+                    </div>
+                    <div className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition duration-200">
+                        <span><ModeComment className='text-gray-500' /></span>
+                        <span>Bình luận</span>
+                    </div>
+                    <div className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-6 py-2 rounded-lg transition duration-200">
+                        <span><Send className='text-gray-500' /></span>
+                        <span>Chia sẻ</span>
+                    </div>
                 </div>
+
             </div>
 
             {/* Bình luận */}
