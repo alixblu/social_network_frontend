@@ -112,19 +112,26 @@ function ContentArea() {
     const [userInfo, setUser] = useState(null);
 
     useEffect(() => {
-        const token = JSON.parse(sessionStorage.getItem("token"));
-        axios.get("http://localhost:8080/users/getUserByToken", {
-            headers: {
-                Authorization: `Bearer ${token.accessToken}`
-            }
-        })
-        .then(response => {
-            setUser(response.data);
-        })
-        .catch(error => {
-            console.error("Lỗi lấy thông tin user:", error);
-        });
-    }, []);
+    const token = sessionStorage.getItem("token"); // Lấy chuỗi token trực tiếp
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+    console.log('Token in ContentArea:', token);
+    axios.get("http://localhost:8080/users/getUserByToken", {
+      headers: {
+        Authorization: `Bearer ${token}` // Sử dụng token trực tiếp
+      }
+    })
+    .then(response => {
+      setUser(response.data);
+      console.log('User data in ContentArea:', response.data);
+    })
+    .catch(error => {
+      console.error("Lỗi lấy thông tin user trong ContentArea:", error);
+      window.location.href = '/login'; // Chuyển về login nếu lỗi
+    });
+  }, []);
     
 
     const p = [

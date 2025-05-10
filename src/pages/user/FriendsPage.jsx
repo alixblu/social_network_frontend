@@ -1,4 +1,6 @@
+// src/pages/user/FriendsPage.js
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { Card, CardContent } from "../../components/ui/card";
 import { UserIcon, UsersIcon, ListIcon, HomeIcon, MoreVertical } from "lucide-react";
@@ -36,10 +38,10 @@ const Sidebar = ({ selected, onSelect }) => {
 const FriendCard = ({ id, username, mutualFriends, avatarUrl, onAccept, onDelete }) => (
   <Card className="w-60">
     <CardContent className="p-4 text-center">
-      <img src={avatarUrl} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
       <div className="font-semibold">{username}</div>
       <div className="text-sm text-gray-500 min-h-[1.25rem]">
-        {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
+        {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
       </div>
       <div className="flex justify-center gap-2 mt-2">
         <button className="friend-action confirm" onClick={() => onAccept(id)}>Xác nhận</button>
@@ -70,10 +72,10 @@ const FriendCardSimple = ({ id, username, mutualFriends, avatarUrl, isFriend, on
   return (
     <Card className="w-60 relative">
       <CardContent className="p-4 text-center">
-        <img src={avatarUrl} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+        <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
         <div className="font-semibold">{username}</div>
         <div className="text-sm text-gray-500 min-h-[1.25rem]">
-          {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
+          {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
         </div>
         <button
           onClick={() => setShowMenu(!showMenu)}
@@ -94,9 +96,6 @@ const FriendCardSimple = ({ id, username, mutualFriends, avatarUrl, isFriend, on
                 >
                   ❌ Xóa kết bạn với {username}
                 </button>
-                {/* <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">
-                  🚫 Hủy theo dõi {username}
-                </button> */}
                 <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">
                   💬 Nhắn tin cho {username}
                 </button>
@@ -125,7 +124,7 @@ const FriendCardSimple = ({ id, username, mutualFriends, avatarUrl, isFriend, on
 const BlockedFriendCard = ({ id, username, avatarUrl, onUnblock }) => (
   <Card className="w-60">
     <CardContent className="p-4 text-center">
-      <img src={avatarUrl} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
       <div className="font-semibold">{username}</div>
       <div className="text-sm text-gray-500 mb-2">⛔ Đã bị chặn</div>
       <button
@@ -151,63 +150,82 @@ export default function FriendsPage() {
   const [showMoreSuggestions, setShowMoreSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Giả định user ID hiện tại (thay bằng logic lấy từ auth context)
-  const currentUserId = 1; // Thay bằng logic lấy ID user đăng nhập
+  // Lấy currentUserId từ sessionStorage
+  const currentUserId = sessionStorage.getItem('userId');
 
   // Lấy dữ liệu từ backend
   useEffect(() => {
+    if (!currentUserId) {
+      setError('Vui lòng đăng nhập để tiếp tục');
+      toast.error('Vui lòng đăng nhập để tiếp tục');
+      navigate('/login');
+      return;
+    }
+
     const fetchData = async () => {
       setIsLoading(true);
       try {
         // Lấy lời mời kết bạn
-        const friendRequestsRes = await fetch('http://localhost:8080/friendships/status/PENDING');
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendRequestsRes.ok) throw new Error('Lỗi khi lấy lời mời kết bạn');
         const friendRequestsData = await friendRequestsRes.json();
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
         // Lấy danh sách bạn bè
-        const friendsRes = await fetch('http://localhost:8080/friendships/status/ACCEPTED');
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendsRes.ok) throw new Error('Lỗi khi lấy danh sách bạn bè');
         const friendsData = await friendsRes.json();
         setFriends(friendsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
         // Lấy danh sách chặn
-        const blockedRes = await fetch('http://localhost:8080/friendships/status/BLOCKED');
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!blockedRes.ok) throw new Error('Lỗi khi lấy danh sách chặn');
         const blockedData = await blockedRes.json();
         setBlockedFriends(blockedData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
         // Lấy gợi ý kết bạn
-        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`);
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!suggestionsRes.ok) throw new Error('Lỗi khi lấy gợi ý kết bạn');
         const suggestionsData = await suggestionsRes.json();
-        const suggestionsWithMutual = await Promise.all(suggestionsData.map(async u => {
-          const mutualRes = await fetch(`http://localhost:8080/friendships/mutual/${currentUserId}/${u.id}`);
-          const mutualFriends = await mutualRes.json();
-          return {
-            id: u.id,
-            username: u.username,
-            avatarUrl: u.avatarUrl,
-            mutualFriends
-          };
-        }));
-        setSuggestions(suggestionsWithMutual);
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
       } catch (err) {
         setError(err.message || 'Không thể tải dữ liệu từ server');
         toast.error(err.message || 'Không thể tải dữ liệu từ server');
@@ -216,41 +234,58 @@ export default function FriendsPage() {
       }
     };
     fetchData();
-  }, [currentUserId]);
+  }, [currentUserId, navigate]);
 
   // Gửi lời mời kết bạn
   const handleAddFriend = async (friendId) => {
     try {
       const response = await fetch('http://localhost:8080/friendships', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
         body: JSON.stringify({
-          user1: { id: currentUserId },
+          user1: { id: parseInt(currentUserId) },
           user2: { id: friendId }
         })
       });
       if (response.ok) {
         toast.success('Lời mời kết bạn đã được gửi!');
-        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`);
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
         const suggestionsData = await suggestionsRes.json();
-        const suggestionsWithMutual = await Promise.all(suggestionsData.map(async u => {
-          const mutualRes = await fetch(`http://localhost:8080/friendships/mutual/${currentUserId}/${u.id}`);
-          const mutualFriends = await mutualRes.json();
-          return {
-            id: u.id,
-            username: u.username,
-            avatarUrl: u.avatarUrl,
-            mutualFriends
-          };
-        }));
-        setSuggestions(suggestionsWithMutual);
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
+
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
+        const friendRequestsData = await friendRequestsRes.json();
+        setFriendRequests(friendRequestsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
       } else {
-        throw new Error('Không thể gửi lời mời kết bạn');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể gửi lời mời kết bạn');
       }
     } catch (err) {
-      setError(err.message || 'Lỗi khi gửi lời mời kết bạn');
-      toast.error(err.message || 'Lỗi khi gửi lời mời kết bạn');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -258,35 +293,47 @@ export default function FriendsPage() {
   const handleAccept = async (friendshipId) => {
     try {
       const response = await fetch(`http://localhost:8080/friendships/${friendshipId}/accept`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
       });
       if (response.ok) {
         toast.success('Đã chấp nhận lời mời kết bạn!');
-        const friendRequestsRes = await fetch('http://localhost:8080/friendships/status/PENDING');
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
         const friendRequestsData = await friendRequestsRes.json();
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
-        const friendsRes = await fetch('http://localhost:8080/friendships/status/ACCEPTED');
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendsRes.ok) throw new Error('Lỗi khi làm mới bạn bè');
         const friendsData = await friendsRes.json();
         setFriends(friendsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
       } else {
-        throw new Error('Không thể chấp nhận lời mời');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể chấp nhận lời mời');
       }
     } catch (err) {
-      setError(err.message || 'Lỗi khi chấp nhận lời mời');
-      toast.error(err.message || 'Lỗi khi chấp nhận lời mời');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -294,40 +341,47 @@ export default function FriendsPage() {
   const handleDelete = async (friendshipId) => {
     try {
       const response = await fetch(`http://localhost:8080/friendships/${friendshipId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
       });
       if (response.ok) {
         toast.success('Đã xóa lời mời kết bạn!');
-        const friendRequestsRes = await fetch('http://localhost:8080/friendships/status/PENDING');
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
         const friendRequestsData = await friendRequestsRes.json();
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
-        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`);
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
         const suggestionsData = await suggestionsRes.json();
-        const suggestionsWithMutual = await Promise.all(suggestionsData.map(async u => {
-          const mutualRes = await fetch(`http://localhost:8080/friendships/mutual/${currentUserId}/${u.id}`);
-          const mutualFriends = await mutualRes.json();
-          return {
-            id: u.id,
-            username: u.username,
-            avatarUrl: u.avatarUrl,
-            mutualFriends
-          };
-        }));
-        setSuggestions(suggestionsWithMutual);
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
       } else {
-        throw new Error('Không thể xóa lời mời');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể xóa lời mời');
       }
     } catch (err) {
-      setError(err.message || 'Lỗi khi xóa lời mời');
-      toast.error(err.message || 'Lỗi khi xóa lời mời');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -335,40 +389,47 @@ export default function FriendsPage() {
   const handleUnfriend = async (friendshipId) => {
     try {
       const response = await fetch(`http://localhost:8080/friendships/${friendshipId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
       });
       if (response.ok) {
         toast.success('Đã hủy kết bạn!');
-        const friendsRes = await fetch('http://localhost:8080/friendships/status/ACCEPTED');
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendsRes.ok) throw new Error('Lỗi khi làm mới bạn bè');
         const friendsData = await friendsRes.json();
         setFriends(friendsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
-        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`);
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
         const suggestionsData = await suggestionsRes.json();
-        const suggestionsWithMutual = await Promise.all(suggestionsData.map(async u => {
-          const mutualRes = await fetch(`http://localhost:8080/friendships/mutual/${currentUserId}/${u.id}`);
-          const mutualFriends = await mutualRes.json();
-          return {
-            id: u.id,
-            username: u.username,
-            avatarUrl: u.avatarUrl,
-            mutualFriends
-          };
-        }));
-        setSuggestions(suggestionsWithMutual);
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
       } else {
-        throw new Error('Không thể hủy kết bạn');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể hủy kết bạn');
       }
     } catch (err) {
-      setError(err.message || 'Lỗi khi hủy kết bạn');
-      toast.error(err.message || 'Lỗi khi hủy kết bạn');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -376,35 +437,47 @@ export default function FriendsPage() {
   const handleBlock = async (friendshipId) => {
     try {
       const response = await fetch(`http://localhost:8080/friendships/${friendshipId}/block`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
       });
       if (response.ok) {
         toast.success('Đã chặn user!');
-        const friendsRes = await fetch('http://localhost:8080/friendships/status/ACCEPTED');
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!friendsRes.ok) throw new Error('Lỗi khi làm mới bạn bè');
         const friendsData = await friendsRes.json();
         setFriends(friendsData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
-        const blockedRes = await fetch('http://localhost:8080/friendships/status/BLOCKED');
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!blockedRes.ok) throw new Error('Lỗi khi làm mới danh sách chặn');
         const blockedData = await blockedRes.json();
         setBlockedFriends(blockedData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
       } else {
-        throw new Error('Không thể chặn user');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể chặn user');
       }
     } catch (err) {
-      setError(err.message || 'Lỗi khi chặn user');
-      toast.error(err.message || 'Lỗi khi chặn user');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -412,40 +485,47 @@ export default function FriendsPage() {
   const handleUnblock = async (friendshipId) => {
     try {
       const response = await fetch(`http://localhost:8080/friendships/${friendshipId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
       });
       if (response.ok) {
         toast.success('Đã bỏ chặn user!');
-        const blockedRes = await fetch('http://localhost:8080/friendships/status/BLOCKED');
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!blockedRes.ok) throw new Error('Lỗi khi làm mới danh sách chặn');
         const blockedData = await blockedRes.json();
         setBlockedFriends(blockedData.map(f => ({
           id: f.id,
-          username: f.user1.id === currentUserId ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === currentUserId ? f.user2.avatarUrl : f.user1.avatarUrl,
-          mutualFriends: f.mutualFriends
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
         })));
 
-        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`);
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
         if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
         const suggestionsData = await suggestionsRes.json();
-        const suggestionsWithMutual = await Promise.all(suggestionsData.map(async u => {
-          const mutualRes = await fetch(`http://localhost:8080/friendships/mutual/${currentUserId}/${u.id}`);
-          const mutualFriends = await mutualRes.json();
-          return {
-            id: u.id,
-            username: u.username,
-            avatarUrl: u.avatarUrl,
-            mutualFriends
-          };
-        }));
-        setSuggestions(suggestionsWithMutual);
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
       } else {
-        throw new Error('Không thể bỏ chặn');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể bỏ chặn');
       }
     } catch (err) {
-      setError(err.message || 'Lỗi khi bỏ chặn');
-      toast.error(err.message || 'Lỗi khi bỏ chặn');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
 
