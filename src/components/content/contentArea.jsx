@@ -5,17 +5,81 @@ import {
     PhotoLibrary,
     Clear,
     Recommend,
-    FavoriteBorder,
     ModeComment,
     Send
 } from "@mui/icons-material";
-import axios from "axios"
-
-
-
-
-export function getPostItem(post) {
+import axios from "axios";
+import PopupComments from './popup/PopupComments';
+// Hàm hiển thị một post
+function PostItem({ post , id }) {
+    
     const postUser = post.user;
+    const [showComments, setShowComments] = useState(false);
+    const [commentCount, setCommentCount] = useState(0);
+
+    const mediaUrls = post.mediaUrls || [];
+    const images = mediaUrls.filter(url => url.match(/\.(jpeg|jpg|png|gif)$/i));
+    const videos = mediaUrls.filter(url => url.match(/\.mp4$/i));
+    const audios = mediaUrls.filter(url => url.match(/\.mp3$/i));
+    
+    const [liked, setLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+
+    useEffect(() => {
+        // Gọi API để lấy số lượng bình luận cho bài viết
+        axios.get(`http://localhost:8080/comments/post/${post.id}`)
+            .then(response => {
+                // Kiểm tra nếu có dữ liệu và cập nhật số lượng bình luận
+                setCommentCount(response.data ? response.data.length : 0);
+            })
+            .catch(error => {
+                console.error("Lỗi lấy số lượng bình luận:", error);
+            });
+    }, [post.id]);  // Chỉ gọi lại khi post.id thay đổi
+
+    useEffect(() => {
+        axios.get(`http://localhost:8080/likes/post/${post.id}`)
+            .then(response => {
+                const likes = response.data || [];
+                setLikeCount(likes.length);
+
+                // Kiểm tra nếu người dùng hiện tại đã like
+                const likedByUser = likes.some(like => like.user.id === id); // id là userId
+                setLiked(likedByUser);
+            })
+            .catch(err => console.error("Lỗi lấy likes:", err));
+    }, [post.id, id]);
+
+
+    const handleLikeClick = () => {
+        if (!liked) {
+            axios.post("http://localhost:8080/likes", null, {
+                params: {
+                    postId: post.id,
+                    userId: id,
+                    reactionType: "LIKE"
+                }
+            }).then(() => {
+                setLiked(true);
+                setLikeCount(prev => prev + 1);
+            }).catch(err => console.error("Lỗi Like:", err));
+        } else {
+
+            axios.delete("http://localhost:8080/likes", {
+                params: {
+                    postId: post.id,
+                    userId: id
+                }
+            })
+            .then(() => {
+                setLiked(false);
+                setLikeCount(prev => Math.max(prev - 1, 0)); // tránh âm
+            })
+            .catch(err => console.error("Lỗi Unlike:", err));
+        }
+    };
+
+
 
     return (
         <div key={post.id} style={{ backgroundColor: 'white', borderRadius: '10px', marginBottom: '20px' }}>
@@ -24,7 +88,7 @@ export function getPostItem(post) {
                 <div className="info-container">
                     <img src={`http://localhost:8080/images/${postUser.avatarUrl}`} className="info-compoment-image" alt="User" />
                     <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px' }}>
-                        <span className="info-compoment-user">{postUser.username}</span>
+                        <span className="font-semibold">{postUser.username}</span>
                         <span style={{ fontSize: "12px" }}>{post.time}</span>
                     </div>
                 </div>
@@ -34,70 +98,109 @@ export function getPostItem(post) {
             {/* Post Content */}
             <div className='post-content'>{post.content}</div>
 
-            {/* Post Image */}
-            {post.imageUrl && (
-                <div style={{ display: "flex", boxSizing: "border-box", cursor: 'pointer' }}>
-                    <img src={`http://localhost:8080/images/${post.imageUrl}`} alt="Post" />
-                </div>
-            )}
+            {/* Media section */}
+           <div className="media-container">
+                {/* Audio on top if exists */}
+                {audios.length > 0 && (
+                    <audio key="audio" controls className="audio-player mb-2">
+                        <source src={audios[0]} type="audio/mpeg" />
+                    </audio>
+                )}
+
+                {/* Images and videos */}
+                {(images.length > 0 || videos.length > 0) && (
+                    <div className="media-row">
+                        {/* Nếu có cả ảnh và video */}
+                        {(images.length === 1 && videos.length === 1) && (
+                        <>  <div className='flex'>
+                                <img
+                                    src={images[0]}
+                                    alt="media-img"
+                                    className="media-half"
+                                />
+                                <video
+                                    controls
+                                    className="media-half"
+                                >
+                                    <source src={videos[0]} type="video/mp4" />
+                                </video>
+                            </div>
+                            </>
+                        )}
+
+                        {/* Nếu chỉ có 1 file ảnh */}
+                        {images.length === 1 && videos.length === 0 && (
+                            <img
+                                src={images[0]}
+                                alt="media-img"
+                                className="media-full"
+                            />
+                        )}
+
+                        {/* Nếu chỉ có 1 video */}
+                        {videos.length === 1 && images.length === 0 && (
+                            <video
+                                controls
+                                className="media-full"
+                            >
+                                <source src={videos[0]} type="video/mp4" />
+                            </video>
+                        )}
+                    </div>
+                )}
+            </div>
+
 
             {/* Reactions */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', margin: "0 10px", padding: '10px 0', alignItems: 'center', borderBottom: '1px rgb(202, 199, 199) solid' }}>
-                    <div className='flex items-center'> 
+                    <div className='flex items-center'>
                         <span><Recommend className="text-blue-500" /></span>
-                        <span style={{ marginLeft: '3px' }}>99</span>
+                        <span style={{ marginLeft: '3px' }}>{likeCount}</span>
                     </div>
                     <div>
-                        <span className='text-gray-500 text-sm mr-2' >11 Bình luận</span>
-                        <span className='text-gray-500 text-sm mr-2'>2 Chia sẽ</span>
+                        <span className='text-gray-500 text-sm mr-2'>{commentCount} Bình luận</span>
+                        <span className='text-gray-500 text-sm mr-2'>2 Chia sẻ</span>
                     </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex justify-around my-2 pb-2">
-                    <div className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-6 py-2 rounded-lg transition duration-200">
-                        <span><Recommend className='text-gray-500' /></span>
+                    <div
+                        className={`flex items-center gap-1 cursor-pointer px-6 py-2 rounded-lg transition duration-200 
+                            ${liked ? "text-blue-600 bg-gray-200" : "text-gray-800 hover:text-blue-600 hover:bg-gray-200"}`}
+                        onClick={handleLikeClick}
+                    >
+                        <span><Recommend className={liked ? "text-blue-600" : "text-gray-500"} /></span>
                         <span>Thích</span>
                     </div>
-                    <div className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition duration-200">
+
+                    <div
+                        className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition duration-200"
+                        onClick={() => setShowComments(!showComments)}
+                    >
                         <span><ModeComment className='text-gray-500' /></span>
                         <span>Bình luận</span>
                     </div>
+
                     <div className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-6 py-2 rounded-lg transition duration-200">
                         <span><Send className='text-gray-500' /></span>
                         <span>Chia sẻ</span>
                     </div>
                 </div>
-
             </div>
 
-            {/* Bình luận */}
-            <div className="post-comments" style={{ padding: '10px 15px' }}>
-                {post.comments && post.comments.map((cmt, index) => (
-                    <div key={index} style={{ marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>
-                        <div style={{ fontWeight: 'bold' }}>{cmt.username}</div>
-                        <div style={{ fontSize: '14px' }}>{cmt.text}</div>
-                    </div>
-                ))}
+            {showComments && (
+                <PopupComments
+                    id ={id}
+                    postId={post.id}
+                    onClose={() => setShowComments(false)}
+                />
+            )}
 
-                {/* Nhập bình luận */}
-                <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px' }}>
-                    <input
-                        type="text"
-                        placeholder="Viết bình luận..."
-                        style={{
-                            flex: 1,
-                            padding: '8px 10px',
-                            borderRadius: '20px',
-                            border: '1px solid #ccc',
-                            outline: 'none'
-                        }}
-                    />
-                    <Send style={{ marginLeft: '8px', cursor: 'pointer', color: '#1976d2' }} />
-                </div>
-            </div>
         </div>
+        
+
     );
 }
 
@@ -105,12 +208,20 @@ export function getPostItem(post) {
 
 function ContentArea() {
     const [showPopup, setShowPopup] = useState(false);
+    const [userInfo, setUser] = useState(null);
+    const [posts, setPosts] = useState([]);
+
     const handleTextAreaClick = () => {
         setShowPopup(true);
     };
 
-    const [userInfo, setUser] = useState(null);
 
+
+   
+
+
+
+    // Lấy thông tin người dùng
     useEffect(() => {
         const token = JSON.parse(sessionStorage.getItem("token"));
         axios.get("http://localhost:8080/users/getUserByToken", {
@@ -125,80 +236,30 @@ function ContentArea() {
             console.error("Lỗi lấy thông tin user:", error);
         });
     }, []);
-    
 
-    const p = [
-        {
-            id: 1,
-            content: "Hôm nay trời đẹp quá, đi dạo thôi!",
-            time: "2025-05-08T09:30:00",
-            imageUrl: "default-avatar.png",
-            user: {
-                id: 101,
-                username: "Trần Hoài Nam",
-                avatarUrl: "default-avatar.png"
-            },
-            comments: [
-                { username: "Nguyễn Văn A", text: "Bài viết hay quá!" },
-                { username: "Lê Thị B", text: "Đồng ý với bạn!" }
-            ]
-            
-        },
-        {
-            id: 2,
-            content: "Đã hoàn thành xong dự án lớn 💪",
-            time: "2025-05-07T14:10:00",
-            imageUrl: "default-avatar.png",
-            user: {
-                id: 102,
-                username: "Lê Thị Minh",
-                avatarUrl: "default-avatar.png"
-            },
-            comments: [
-                { username: "Nguyễn Văn A", text: "Bài viết hay quá!" },
-                { username: "Lê Thị B", text: "Đồng ý với bạn!" }
-            ]
-        },
-        {
-            id: 3,
-            content: "Mọi người có quán cà phê nào yên tĩnh để học không?",
-            time: "2025-05-06T17:45:00",
-            imageUrl: "default-avatar.png",
-            user: {
-                id: 103,
-                username: "Nguyễn Văn Hùng",
-                avatarUrl: "default-avatar.png"
-            },
-            comments: [
-                { username: "Nguyễn Văn A", text: "Bài viết hay quá!" },
-                { username: "Lê Thị B", text: "Đồng ý với bạn!" }
-            ]
-        }
-        
-    ];
-    
-    // const [posts, setPosts] = useState([]);
-
-    // useEffect(() => {
-    //     axios.get("http://localhost:8080/posts") // endpoint giả định
-    //         .then(res => {
-    //             setPosts(res.data); // danh sách post, mỗi post có post.user
-    //         })
-    //         .catch(err => console.error("Lỗi lấy bài viết:", err));
-    // }, []);
-
+    // Gọi API lấy tất cả bài viết
+    useEffect(() => {
+        axios.get("http://localhost:8080/posts")
+            .then(res => {
+                const fetchedPosts = res.data.map(post => ({
+                    ...post,
+                    time: post.createdAt, // gán thời gian nếu cần
+                    mediaUrls: post.mediaUrls || [], // đảm bảo không undefined
+                    comments: post.comments || []    // đảm bảo không undefined
+                }));
+                setPosts(fetchedPosts);
+            })
+            .catch(err => console.error("Lỗi lấy bài viết:", err));
+    }, []);
 
     return (
         <div className="content-area">
             <div style={{ width: '600px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{
-                    width: '100%',
-                    backgroundColor: 'white',
-                    borderRadius: '10px',
-                }}>
+                {/* Viết bài */}
+                <div style={{ width: '100%', backgroundColor: 'white', borderRadius: '10px' }}>
                     {userInfo && (
                         <div className="container-question">
-                            <img src={`http://localhost:8080/images/${userInfo.avatarUrl}`}className='w-[45px] h-[45px] rounded-full' alt="User Avatar" />
+                            <img src={`http://localhost:8080/images/${userInfo.avatarUrl}`} className='w-[45px] h-[45px] rounded-full' alt="User Avatar" />
                             <span className="text-area" onClick={handleTextAreaClick}>
                                 {userInfo.username} ơi, bạn đang nghĩ gì thế?
                             </span>
@@ -210,19 +271,23 @@ function ContentArea() {
                     </div>
                 </div>
 
-
-                {/* Chỗ này là lấy danh sách bào post từ backend để hiển thị lên màn hình */}
-                <div className="list-post" style={{ width: '100%' }}>
-                    {[...p]
-                        .sort((a, b) => new Date(b.time) - new Date(a.time))
-                        .map((post) => getPostItem(post))
-                    }
-                </div>
+                {/* Danh sách bài viết */}
+                {userInfo && (
+                    <div className="list-post" style={{ width: '100%' }}>
+                        {[...posts]
+                            .sort((a, b) => new Date(b.time) - new Date(a.time))
+                            .map((post) => (
+                                <PostItem key={post.id} id={userInfo.id} post={post} />
+                            ))
+                        }
+                    </div>
+                )}
 
             </div>
 
+            {/* Popup đăng bài */}
             {showPopup && (
-                <PopupPost onClose={() => setShowPopup(false)} userInfo={userInfo} />
+                <PopupPost  onClose={() => setShowPopup(false)} userInfo={userInfo} />
             )}
         </div>
     );
