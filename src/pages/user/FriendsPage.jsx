@@ -166,7 +166,6 @@ export default function FriendsPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [showMoreSuggestions, setShowMoreSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const currentUserId = sessionStorage.getItem('userId');
@@ -179,8 +178,7 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (!currentUserId) {
-      setError('Vui lòng đăng nhập để tiếp tục');
-      toast.error('Vui lòng đăng nhập để tiếp tục');
+      toast.error('Vui lòng đăng nhập để tiếp tục', { autoClose: 3000 });
       navigate('/login');
       return;
     }
@@ -194,18 +192,20 @@ export default function FriendsPage() {
           },
         };
 
-        // Lấy lời mời kết bạn
+        // Lấy lời mời kết bạn (chỉ lấy lời mời nhận được)
         const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, config);
         if (!friendRequestsRes.ok) throw new Error('Lỗi khi lấy lời mời kết bạn');
         const friendRequestsData = await friendRequestsRes.json();
-        console.log('Friend Requests avatarUrl:', friendRequestsData.map(f => ({
-          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl)
+        console.log('Friend Requests:', friendRequestsData.map(f => ({
+          id: f.id,
+          user1: f.user1.username,
+          user2: f.user2.username,
+          status: f.status
         })));
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
-          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
+          username: f.user1.username, // user1 là người gửi lời mời
+          avatarUrl: getAvatarUrl(f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -213,7 +213,7 @@ export default function FriendsPage() {
         const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, config);
         if (!friendsRes.ok) throw new Error('Lỗi khi lấy danh sách bạn bè');
         const friendsData = await friendsRes.json();
-        console.log('Friends avatarUrl:', friendsData.map(f => ({
+        console.log('Friends:', friendsData.map(f => ({
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
           avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl)
         })));
@@ -228,7 +228,7 @@ export default function FriendsPage() {
         const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, config);
         if (!blockedRes.ok) throw new Error('Lỗi khi lấy danh sách chặn');
         const blockedData = await blockedRes.json();
-        console.log('Blocked avatarUrl:', blockedData.map(f => ({
+        console.log('Blocked:', blockedData.map(f => ({
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
           avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl)
         })));
@@ -243,7 +243,7 @@ export default function FriendsPage() {
         const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, config);
         if (!suggestionsRes.ok) throw new Error('Lỗi khi lấy gợi ý kết bạn');
         const suggestionsData = await suggestionsRes.json();
-        console.log('Suggestions avatarUrl:', suggestionsData.map(u => ({
+        console.log('Suggestions:', suggestionsData.map(u => ({
           username: u.username,
           avatarUrl: getAvatarUrl(u.avatarUrl)
         })));
@@ -254,8 +254,7 @@ export default function FriendsPage() {
           mutualFriends: 0
         })));
       } catch (err) {
-        setError(err.message || 'Không thể tải dữ liệu từ server');
-        toast.error(err.message || 'Không thể tải dữ liệu từ server');
+        toast.error(err.message || 'Không thể tải dữ liệu từ server', { autoClose: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -278,7 +277,8 @@ export default function FriendsPage() {
         })
       });
       if (response.ok) {
-        toast.success('Lời mời kết bạn đã được gửi!');
+        toast.success('Lời mời kết bạn đã được gửi!', { autoClose: 3000 });
+        // Chỉ làm mới danh sách gợi ý
         const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
@@ -292,27 +292,12 @@ export default function FriendsPage() {
           avatarUrl: getAvatarUrl(u.avatarUrl),
           mutualFriends: 0
         })));
-
-        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          },
-        });
-        if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
-        const friendRequestsData = await friendRequestsRes.json();
-        setFriendRequests(friendRequestsData.map(f => ({
-          id: f.id,
-          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
-          mutualFriends: f.mutualFriends || 0
-        })));
       } else {
         const errorData = await response.text();
         throw new Error(errorData || 'Không thể gửi lời mời kết bạn');
       }
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message, { autoClose: 3000 });
     }
   };
 
@@ -326,7 +311,7 @@ export default function FriendsPage() {
         },
       });
       if (response.ok) {
-        toast.success('Đã chấp nhận lời mời kết bạn!');
+        toast.success('Đã chấp nhận lời mời kết bạn!', { autoClose: 3000 });
         const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
@@ -336,8 +321,8 @@ export default function FriendsPage() {
         const friendRequestsData = await friendRequestsRes.json();
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
-          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
+          username: f.user1.username,
+          avatarUrl: getAvatarUrl(f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -359,8 +344,7 @@ export default function FriendsPage() {
         throw new Error(errorData || 'Không thể chấp nhận lời mời');
       }
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message, { autoClose: 3000 });
     }
   };
 
@@ -374,7 +358,7 @@ export default function FriendsPage() {
         },
       });
       if (response.ok) {
-        toast.success('Đã xóa lời mời kết bạn!');
+        toast.success('Đã xóa lời mời kết bạn!', { autoClose: 3000 });
         const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
@@ -384,8 +368,8 @@ export default function FriendsPage() {
         const friendRequestsData = await friendRequestsRes.json();
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
-          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
+          username: f.user1.username,
+          avatarUrl: getAvatarUrl(f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -407,8 +391,7 @@ export default function FriendsPage() {
         throw new Error(errorData || 'Không thể xóa lời mời');
       }
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message, { autoClose: 3000 });
     }
   };
 
@@ -422,7 +405,7 @@ export default function FriendsPage() {
         },
       });
       if (response.ok) {
-        toast.success('Đã hủy kết bạn!');
+        toast.success('Đã hủy kết bạn!', { autoClose: 3000 });
         const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
@@ -455,8 +438,7 @@ export default function FriendsPage() {
         throw new Error(errorData || 'Không thể hủy kết bạn');
       }
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message, { autoClose: 3000 });
     }
   };
 
@@ -470,7 +452,7 @@ export default function FriendsPage() {
         },
       });
       if (response.ok) {
-        toast.success('Đã chặn user!');
+        toast.success('Đã chặn user!', { autoClose: 3000 });
         const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
@@ -503,8 +485,7 @@ export default function FriendsPage() {
         throw new Error(errorData || 'Không thể chặn user');
       }
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message, { autoClose: 3000 });
     }
   };
 
@@ -518,7 +499,7 @@ export default function FriendsPage() {
         },
       });
       if (response.ok) {
-        toast.success('Đã bỏ chặn user!');
+        toast.success('Đã bỏ chặn user!', { autoClose: 3000 });
         const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
@@ -551,8 +532,7 @@ export default function FriendsPage() {
         throw new Error(errorData || 'Không thể bỏ chặn');
       }
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      toast.error(err.message, { autoClose: 3000 });
     }
   };
 
@@ -571,8 +551,6 @@ export default function FriendsPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
-      <ToastContainer />
-      {error && <div className="text-red-500 text-center p-2">{error}</div>}
       {isLoading && <div className="text-center p-4">Đang tải...</div>}
       <div className="flex flex-1 pt-[0px] overflow-hidden bg-gray-100">
         <Sidebar selected={tab} onSelect={setTab} />
