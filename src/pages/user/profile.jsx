@@ -57,11 +57,11 @@ function Profile() {
   });
 
   useEffect(() => {
-    const token = JSON.parse(sessionStorage.getItem("token"));
+    const token = sessionStorage.getItem("token");
 
     axios.get("http://localhost:8080/users/getUserByToken", {
       headers: {
-        Authorization: `Bearer ${token.accessToken}`,
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((response) => {
@@ -103,7 +103,8 @@ function Profile() {
     if (File) {
       formData.append("avatar", File);
     }
-  
+    const token = sessionStorage.getItem("token");
+    
     try {
       const response = await axios.put(
         `http://localhost:8080/users/profile/${userId}`,
@@ -111,7 +112,7 @@ function Profile() {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${sessionStorage.getItem('token')}` // Add authorization header
+            "Authorization": `Bearer ${token}` // Add authorization header
           },
         }
       );

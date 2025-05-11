@@ -1,3 +1,4 @@
+// src/pages/auth/Login.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -26,31 +27,44 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('http://localhost:8080/users/auth/login', data);
-  
-      sessionStorage.setItem('token', JSON.stringify(response.data));
-  
+      // Gọi API đăng nhập
+      const loginResponse = await axios.post('http://localhost:8080/users/auth/login', data);
+      console.log('Phản hồi API đăng nhập:', loginResponse.data); // Debug
+
+      // Trích xuất accessToken
+      const { accessToken } = loginResponse.data;
+
+      // Gọi API getUserByToken để lấy userId
+      const userResponse = await axios.get('http://localhost:8080/users/getUserByToken', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      console.log('Phản hồi API getUserByToken:', userResponse.data); // Debug
+
+      // Trích xuất userId từ phản hồi
+      const { id: userId } = userResponse.data;
+
+      // Lưu token và userId vào sessionStorage
+      sessionStorage.setItem('token', accessToken);
+      sessionStorage.setItem('userId', userId.toString());
+
       toast.success('Đăng nhập thành công!', {
         position: "top-right",
         autoClose: 2000,
         theme: "colored",
       });
-  
+
       setTimeout(() => {
         navigate('/home');
       }, 2000);
     } catch (error) {
-      // Lấy thông báo lỗi từ backend (nếu có)
       const errorMessage = error.response?.data || 'Đăng nhập không thành công! Kiểm tra lại email và mật khẩu';
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 2000,
         theme: "colored",
       });
-      // setError('root', {
-      //   type: 'manual',
-      //   message: errorMessage,
-      // });
     }
   };
 

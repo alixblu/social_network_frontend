@@ -223,10 +223,10 @@ function ContentArea() {
 
     // Lấy thông tin người dùng
     useEffect(() => {
-        const token = JSON.parse(sessionStorage.getItem("token"));
+        const token = sessionStorage.getItem("token");
         axios.get("http://localhost:8080/users/getUserByToken", {
             headers: {
-                Authorization: `Bearer ${token.accessToken}`
+                Authorization: `Bearer ${token}`
             }
         })
         .then(response => {

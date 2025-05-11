@@ -66,6 +66,7 @@ const handleFileChange = (e) => {
 
       alert(response.data.message || "Đăng bài thành công!");
       onClose();
+      window.location.reload();
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Có lỗi xảy ra khi đăng bài.";
       alert(errorMsg);

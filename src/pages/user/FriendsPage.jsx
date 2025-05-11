@@ -1,39 +1,13 @@
-// ... các import giữ nguyên
+// src/pages/user/FriendsPage.js
 import { useEffect, useRef, useState } from "react";
-import { Button } from "../../components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { Card, CardContent } from "../../components/ui/card";
-import { UserIcon, UsersIcon, GiftIcon, ListIcon, HomeIcon, MoreVertical } from "lucide-react";
+import { UserIcon, UsersIcon, ListIcon, HomeIcon, MoreVertical } from "lucide-react";
 import Header from '../../components/header/header';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './FriendsPage.css';
-
-const friends = [
-  { name: "Bích Trâm", mutual: 1, avatar: "../../../public/images/2.jpg" },
-  { name: "Olivia Bùi", mutual: 0, avatar: "../../../public/images/3.jpg" },
-  { name: "Hồ Ngọc Điệp", mutual: 24, avatar: "../../../public/images/1.jpg" },
-  { name: "Nguyễn Thị Ngọc Bích", mutual: 66, avatar: "../../../public/images/7.jpg" },
-  { name: "Thùy Trung", mutual: 16, avatar: "../../../public/images/8.jpg" },
-  { name: "Ánh Trúc", mutual: 19, avatar: "../../../public/images/9.jpg" },
-];
-
-const allFriendsData = [
-  { name: "Huy Nguyễn", mutual: 8, avatar: "/images/4.jpg" },
-  { name: "Minh Trần", mutual: 3, avatar: "/images/2.jpg" },
-  { name: "Lan Phạm", mutual: 10, avatar: "/images/3.jpg" },
-  { name: "Tú Anh", mutual: 0, avatar: "/images/4.jpg" },
-  { name: "Nguyễn Dương Duy Khánh", mutual: 5, avatar: "/images/5.jpg" },
-  { name: "Hoài Bảo", mutual: 2, avatar: "/images/6.jpg" },
-  { name: "Thảo Vy", mutual: 1, avatar: "/images/7.jpg" },
-  { name: "Thanh Hằng", mutual: 7, avatar: "/images/8.jpg" },
-  { name: "Bảo Châu", mutual: 4, avatar: "/images/9.jpg" },
-  { name: "Trung Tín", mutual: 9, avatar: "/images/10.jpg" },
-  { name: "Quốc Huy", mutual: 6, avatar: "/images/1.jpg" },
-  { name: "Ngọc Hân", mutual: 0, avatar: "/images/2.jpg" },
-  { name: "Hải Yến", mutual: 3, avatar: "/images/3.jpg" },
-  { name: "Thanh Trúc", mutual: 1, avatar: "/images/2.jpg" },
-  { name: "Khánh Linh", mutual: 11, avatar: "/images/9.jpg" },
-  { name: "Anh Dũng", mutual: 5, avatar: "/images/4.jpg" },
-];
 
 const Sidebar = ({ selected, onSelect }) => {
   const items = [
@@ -61,23 +35,23 @@ const Sidebar = ({ selected, onSelect }) => {
   );
 };
 
-const FriendCard = ({ name, mutual, avatar }) => (
+const FriendCard = ({ id, username, mutualFriends, avatarUrl, onAccept, onDelete }) => (
   <Card className="w-60">
     <CardContent className="p-4 text-center">
-      <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
-      <div className="font-semibold">{name}</div>
+      <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <div className="font-semibold">{username}</div>
       <div className="text-sm text-gray-500 min-h-[1.25rem]">
-        {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
+        {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
       </div>
       <div className="flex justify-center gap-2 mt-2">
-        <button className="friend-action confirm">Xác nhận</button>
-        <button className="friend-action delete">Xóa</button>
+        <button className="friend-action confirm" onClick={() => onAccept(id)}>Xác nhận</button>
+        <button className="friend-action delete" onClick={() => onDelete(id)}>Xóa</button>
       </div>
     </CardContent>
   </Card>
 );
 
-const FriendCardSimple = ({ name, mutual, avatar, onBlock }) => {
+const FriendCardSimple = ({ id, username, mutualFriends, avatarUrl, isFriend, onAddFriend, onBlock, onUnfriend }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -98,10 +72,10 @@ const FriendCardSimple = ({ name, mutual, avatar, onBlock }) => {
   return (
     <Card className="w-60 relative">
       <CardContent className="p-4 text-center">
-        <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
-        <div className="font-semibold">{name}</div>
+        <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+        <div className="font-semibold">{username}</div>
         <div className="text-sm text-gray-500 min-h-[1.25rem]">
-          {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
+          {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
         </div>
         <button
           onClick={() => setShowMenu(!showMenu)}
@@ -114,13 +88,32 @@ const FriendCardSimple = ({ name, mutual, avatar, onBlock }) => {
             ref={menuRef}
             className="absolute top-10 right-2 bg-white border rounded shadow-lg z-10 text-left text-sm w-full"
           >
-            <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">❌ Xóa kết bạn với {name}</button>
-            <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">🚫 Hủy theo dõi {name}</button>
-            <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">💬 Nhắn tin cho {name}</button>
-            <button
-              onClick={() => onBlock({ name, avatar })}
-              className="block w-full px-4 py-2 hover:bg-gray-100 text-red-600 text-left"
-            >⛔ Chặn {name}</button>
+            {isFriend ? (
+              <>
+                <button
+                  className="block w-full px-4 py-2 hover:bg-gray-100 text-left"
+                  onClick={() => onUnfriend(id)}
+                >
+                  ❌ Xóa kết bạn với {username}
+                </button>
+                <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">
+                  💬 Nhắn tin cho {username}
+                </button>
+                <button
+                  className="block w-full px-4 py-2 hover:bg-gray-100 text-red-600 text-left"
+                  onClick={() => onBlock(id)}
+                >
+                  ⛔ Chặn {username}
+                </button>
+              </>
+            ) : (
+              <button
+                className="block w-full px-4 py-2 hover:bg-gray-100 text-left"
+                onClick={() => onAddFriend(id)}
+              >
+                ➕ Thêm bạn {username}
+              </button>
+            )}
           </div>
         )}
       </CardContent>
@@ -128,14 +121,14 @@ const FriendCardSimple = ({ name, mutual, avatar, onBlock }) => {
   );
 };
 
-const BlockedFriendCard = ({ name, avatar, onUnblock }) => (
+const BlockedFriendCard = ({ id, username, avatarUrl, onUnblock }) => (
   <Card className="w-60">
     <CardContent className="p-4 text-center">
-      <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
-      <div className="font-semibold">{name}</div>
+      <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <div className="font-semibold">{username}</div>
       <div className="text-sm text-gray-500 mb-2">⛔ Đã bị chặn</div>
       <button
-        onClick={() => onUnblock(name)}
+        onClick={() => onUnblock(id)}
         className="px-4 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200"
       >
         🔓 Bỏ chặn
@@ -143,112 +136,462 @@ const BlockedFriendCard = ({ name, avatar, onUnblock }) => (
     </CardContent>
   </Card>
 );
-const FriendSuggestionCard = ({ name, mutual, avatar, onBlock, onAddFriend }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-    if (showMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showMenu]);
-
-  return (
-    <Card className="w-60 relative">
-      <CardContent className="p-4 text-center">
-        <img src={avatar} alt={name} className="w-20 h-20 rounded-full mx-auto mb-2" />
-        <div className="font-semibold">{name}</div>
-        <div className="text-sm text-gray-500 min-h-[1.25rem]">
-          {mutual > 0 ? `${mutual} bạn chung` : <span>&nbsp;</span>}
-        </div>
-        <div className="flex justify-center gap-2 mt-2">
-          <button onClick={onAddFriend} className="friend-action confirm">Thêm bạn</button>
-          <button onClick={() => onBlock({ name, avatar })} className="friend-action delete">Gỡ</button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 export default function FriendsPage() {
   const [tab, setTab] = useState("Trang chủ");
-  const [search, setSearch] = useState("");
+  const [homeSearch, setHomeSearch] = useState("");
+  const [friendRequestSearch, setFriendRequestSearch] = useState("");
+  const [allFriendsSearch, setAllFriendsSearch] = useState("");
   const [blockedSearch, setBlockedSearch] = useState("");
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [friends, setFriends] = useState([]);
   const [blockedFriends, setBlockedFriends] = useState([]);
-  const [showMoreRequests, setShowMoreRequests] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
   const [showMoreSuggestions, setShowMoreSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const handleBlock = (friend) => {
-    setBlockedFriends((prev) => [...prev, friend]);
+  // Lấy currentUserId từ sessionStorage
+  const currentUserId = sessionStorage.getItem('userId');
+
+  // Lấy dữ liệu từ backend
+  useEffect(() => {
+    if (!currentUserId) {
+      setError('Vui lòng đăng nhập để tiếp tục');
+      toast.error('Vui lòng đăng nhập để tiếp tục');
+      navigate('/login');
+      return;
+    }
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Lấy lời mời kết bạn
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendRequestsRes.ok) throw new Error('Lỗi khi lấy lời mời kết bạn');
+        const friendRequestsData = await friendRequestsRes.json();
+        setFriendRequests(friendRequestsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        // Lấy danh sách bạn bè
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendsRes.ok) throw new Error('Lỗi khi lấy danh sách bạn bè');
+        const friendsData = await friendsRes.json();
+        setFriends(friendsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        // Lấy danh sách chặn
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!blockedRes.ok) throw new Error('Lỗi khi lấy danh sách chặn');
+        const blockedData = await blockedRes.json();
+        setBlockedFriends(blockedData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        // Lấy gợi ý kết bạn
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!suggestionsRes.ok) throw new Error('Lỗi khi lấy gợi ý kết bạn');
+        const suggestionsData = await suggestionsRes.json();
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
+      } catch (err) {
+        setError(err.message || 'Không thể tải dữ liệu từ server');
+        toast.error(err.message || 'Không thể tải dữ liệu từ server');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [currentUserId, navigate]);
+
+  // Gửi lời mời kết bạn
+  const handleAddFriend = async (friendId) => {
+    try {
+      const response = await fetch('http://localhost:8080/friendships', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          user1: { id: parseInt(currentUserId) },
+          user2: { id: friendId }
+        })
+      });
+      if (response.ok) {
+        toast.success('Lời mời kết bạn đã được gửi!');
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
+        const suggestionsData = await suggestionsRes.json();
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
+
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
+        const friendRequestsData = await friendRequestsRes.json();
+        setFriendRequests(friendRequestsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể gửi lời mời kết bạn');
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
   };
 
-  const handleUnblock = (name) => {
-    setBlockedFriends((prev) => prev.filter((f) => f.name !== name));
+  // Chấp nhận lời mời
+  const handleAccept = async (friendshipId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/friendships/${friendshipId}/accept`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        toast.success('Đã chấp nhận lời mời kết bạn!');
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
+        const friendRequestsData = await friendRequestsRes.json();
+        setFriendRequests(friendRequestsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendsRes.ok) throw new Error('Lỗi khi làm mới bạn bè');
+        const friendsData = await friendsRes.json();
+        setFriends(friendsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể chấp nhận lời mời');
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
   };
 
-  const visibleFriends = allFriendsData.filter(
-    (f) => !blockedFriends.some((b) => b.name === f.name)
+  // Từ chối/Xóa lời mời
+  const handleDelete = async (friendshipId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/friendships/${friendshipId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        toast.success('Đã xóa lời mời kết bạn!');
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendRequestsRes.ok) throw new Error('Lỗi khi làm mới lời mời');
+        const friendRequestsData = await friendRequestsRes.json();
+        setFriendRequests(friendRequestsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
+        const suggestionsData = await suggestionsRes.json();
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể xóa lời mời');
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
+  // Hủy kết bạn
+  const handleUnfriend = async (friendshipId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/friendships/${friendshipId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        toast.success('Đã hủy kết bạn!');
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendsRes.ok) throw new Error('Lỗi khi làm mới bạn bè');
+        const friendsData = await friendsRes.json();
+        setFriends(friendsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
+        const suggestionsData = await suggestionsRes.json();
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể hủy kết bạn');
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
+  // Chặn user
+  const handleBlock = async (friendshipId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/friendships/${friendshipId}/block`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        toast.success('Đã chặn user!');
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!friendsRes.ok) throw new Error('Lỗi khi làm mới bạn bè');
+        const friendsData = await friendsRes.json();
+        setFriends(friendsData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!blockedRes.ok) throw new Error('Lỗi khi làm mới danh sách chặn');
+        const blockedData = await blockedRes.json();
+        setBlockedFriends(blockedData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể chặn user');
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
+  // Bỏ chặn
+  const handleUnblock = async (friendshipId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/friendships/${friendshipId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        toast.success('Đã bỏ chặn user!');
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!blockedRes.ok) throw new Error('Lỗi khi làm mới danh sách chặn');
+        const blockedData = await blockedRes.json();
+        setBlockedFriends(blockedData.map(f => ({
+          id: f.id,
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: f.mutualFriends || 0
+        })));
+
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          },
+        });
+        if (!suggestionsRes.ok) throw new Error('Lỗi khi làm mới gợi ý');
+        const suggestionsData = await suggestionsRes.json();
+        setSuggestions(suggestionsData.map(u => ({
+          id: u.id,
+          username: u.username,
+          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          mutualFriends: 0
+        })));
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Không thể bỏ chặn');
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
+  // Kết hợp friends và suggestions cho tìm kiếm
+  const combinedSearchData = [
+    ...friends.map(f => ({ ...f, isFriend: true })),
+    ...suggestions.map(s => ({ ...s, isFriend: false }))
+  ].filter(f => !blockedFriends.some(b => b.username === f.username));
+
+  const searchResults = combinedSearchData.filter((f) =>
+    f.username.toLowerCase().includes(homeSearch.toLowerCase())
   );
 
-  const filteredBlockedFriends = blockedFriends.filter((f) =>
-    f.name.toLowerCase().includes(blockedSearch.toLowerCase())
-  );
-
-  const visibleRequests = showMoreRequests ? friends : friends.slice(0, 8);
-
-  const suggestions = allFriendsData.filter(
-    (f) =>
-      !blockedFriends.some((b) => b.name === f.name) &&
-      !friends.some((fr) => fr.name === f.name)
-  );
-
-  const visibleSuggestions = showMoreSuggestions
-    ? suggestions
-    : suggestions.slice(0, 8);
+  const visibleSuggestions = showMoreSuggestions ? suggestions : suggestions.slice(0, 8);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
+      <ToastContainer />
+      {error && <div className="text-red-500 text-center p-2">{error}</div>}
+      {isLoading && <div className="text-center p-4">Đang tải...</div>}
       <div className="flex flex-1 pt-[0px] overflow-hidden bg-gray-100">
         <Sidebar selected={tab} onSelect={setTab} />
         <div className="flex-1 overflow-y-auto p-6">
           {tab === "Trang chủ" && (
             <div>
-              <h2 className="text-xl font-semibold mb-2">Tất cả lời mời kết bạn</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-                {visibleRequests.map((f) => (
-                  <FriendCard key={f.name} {...f} />
-                ))}
-              </div>
-              {friends.length > 8 && (
-                <div className="text-center mt-4">
-                  <button
-                    className="text-blue-600 hover:underline"
-                    onClick={() => setShowMoreRequests(!showMoreRequests)}
-                  >
-                    {showMoreRequests ? "Ẩn bớt" : "Xem thêm"}
-                  </button>
+              <h2 className="text-xl font-semibold mb-2">
+                {homeSearch ? "Kết quả tìm kiếm" : "Gợi ý kết bạn"}
+              </h2>
+              <input
+                type="text"
+                placeholder="Tìm kiếm ..."
+                value={homeSearch}
+                onChange={(e) => setHomeSearch(e.target.value)}
+                className="w-full max-w-md px-4 py-2 border rounded mb-4"
+              />
+              {homeSearch && (
+                <div className="mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((f) => (
+                        <FriendCardSimple
+                          key={f.id}
+                          {...f}
+                          onAddFriend={handleAddFriend}
+                          onBlock={handleBlock}
+                          onUnfriend={handleUnfriend}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-gray-500 italic">Không tìm thấy kết quả.</div>
+                    )}
+                  </div>
+                  <div className="w-full h-px bg-gray-300 my-4"></div>
                 </div>
               )}
-
-              <div className="w-full h-px bg-gray-300 my-4"></div>
-
               <h2 className="text-xl font-semibold mb-2">Gợi ý kết bạn</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {visibleSuggestions.map((f) => (
-                  <FriendSuggestionCard
-                    key={f.name}
+                  <FriendCardSimple
+                    key={f.id}
                     {...f}
+                    isFriend={false}
+                    onAddFriend={handleAddFriend}
                     onBlock={handleBlock}
-                    onAddFriend={() => {}}
+                    onUnfriend={handleUnfriend}
                   />
                 ))}
               </div>
@@ -264,20 +607,36 @@ export default function FriendsPage() {
               )}
             </div>
           )}
-        
 
-            {tab === "Lời mời kết bạn" && (
-              <div>
-                <h1 className="text-2xl font-bold mb-4">Lời mời kết bạn</h1>
-                <ScrollArea className="h-full pr-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {friends.map((f) => (
-                      <FriendCard key={f.name} {...f} />
+          {tab === "Lời mời kết bạn" && (
+            <div>
+              <h1 className="text-2xl font-bold mb-4">Lời mời kết bạn</h1>
+              <input
+                type="text"
+                placeholder="Tìm kiếm lời mời..."
+                value={friendRequestSearch}
+                onChange={(e) => setFriendRequestSearch(e.target.value)}
+                className="w-full max-w-md px-4 py-2 border rounded mb-4"
+              />
+              <ScrollArea className="h-full pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {friendRequests
+                    .filter((f) => f.username.toLowerCase().includes(friendRequestSearch.toLowerCase()))
+                    .map((f) => (
+                      <FriendCard
+                        key={f.id}
+                        {...f}
+                        onAccept={handleAccept}
+                        onDelete={handleDelete}
+                      />
                     ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
+                  {friendRequests.length === 0 && (
+                    <div className="text-gray-500 italic">Không có lời mời kết bạn.</div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
           {tab === "Tất cả bạn bè" && (
             <div>
@@ -285,17 +644,27 @@ export default function FriendsPage() {
               <input
                 type="text"
                 placeholder="Tìm kiếm bạn bè..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={allFriendsSearch}
+                onChange={(e) => setAllFriendsSearch(e.target.value)}
                 className="w-full max-w-md px-4 py-2 border rounded mb-4"
               />
               <ScrollArea className="h-full pr-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {visibleFriends
-                    .filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
+                  {friends
+                    .filter((f) => f.username.toLowerCase().includes(allFriendsSearch.toLowerCase()))
                     .map((f) => (
-                      <FriendCardSimple key={f.name} {...f} onBlock={handleBlock} />
+                      <FriendCardSimple
+                        key={f.id}
+                        {...f}
+                        isFriend={true}
+                        onAddFriend={handleAddFriend}
+                        onBlock={handleBlock}
+                        onUnfriend={handleUnfriend}
+                      />
                     ))}
+                  {friends.length === 0 && (
+                    <div className="text-gray-500 italic">Không có bạn bè nào.</div>
+                  )}
                 </div>
               </ScrollArea>
             </div>
@@ -313,11 +682,17 @@ export default function FriendsPage() {
               />
               <ScrollArea className="h-full pr-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredBlockedFriends.map((f) => (
-                    <BlockedFriendCard key={f.name} {...f} onUnblock={handleUnblock} />
-                  ))}
-                  {filteredBlockedFriends.length === 0 && (
-                    <div className="text-gray-500 italic">Không tìm thấy kết quả.</div>
+                  {blockedFriends
+                    .filter((f) => f.username.toLowerCase().includes(blockedSearch.toLowerCase()))
+                    .map((f) => (
+                      <BlockedFriendCard
+                        key={f.id}
+                        {...f}
+                        onUnblock={handleUnblock}
+                      />
+                    ))}
+                  {blockedFriends.length === 0 && (
+                    <div className="text-gray-500 italic">Không có ai trong danh sách chặn.</div>
                   )}
                 </div>
               </ScrollArea>

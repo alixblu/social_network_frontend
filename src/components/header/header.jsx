@@ -151,24 +151,27 @@ function Header() {
   };
   
   //Data từ sessionStorage
-  useEffect(() => {
-    const token = JSON.parse(sessionStorage.getItem("token"));
+useEffect(() => {
+    const token = sessionStorage.getItem("token"); // ✅ đúng
+
     if (!token) {
       BackToLogin();
       return;
     }
-    console.log(token)
+    console.log('Token in Header:', token);
     axios.get("http://localhost:8080/users/getUserByToken", {
       headers: {
-        Authorization: `Bearer ${token.accessToken}`
+        Authorization: `Bearer ${token}` // Sử dụng token trực tiếp
       }
     })
     .then(response => {
       setUser(response.data);
       setAdmin(response.data.isAdmin);
+      console.log('User data in Header:', response.data);
     })
     .catch(error => {
-      console.error("Lỗi lấy thông tin user:", error);
+      console.error("Lỗi lấy thông tin user trong Header:", error);
+      BackToLogin(); // Chuyển về login nếu lỗi
     });
   }, []);
 
