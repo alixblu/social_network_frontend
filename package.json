@@ -15,6 +15,7 @@
     "@hookform/resolvers": "^5.0.1",
     "@mui/icons-material": "^6.4.11",
     "@mui/material": "^6.4.11",
+    "@stomp/stompjs": "^7.1.1",
     "axios": "^1.8.4",
     "lucide-react": "^0.487.0",
     "react": "^19.0.0",
@@ -24,6 +25,7 @@
     "react-router-dom": "^7.5.0",
     "react-toastify": "^11.0.5",
     "social_network_frontend": "file:",
+    "sockjs-client": "^1.6.1",
     "tailwind-scrollbar-hide": "^2.0.0",
     "zod": "^3.24.3"
   },

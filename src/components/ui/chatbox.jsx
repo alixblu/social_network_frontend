@@ -2,12 +2,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigateNext, ArrowBackIosNew } from '@mui/icons-material';
 import axios from 'axios';
+import { Client } from '@stomp/stompjs';
+import './chatbox.css';
 
 export default function MessengerChatBox({ user, onClose, onBack }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [stompClient, setStompClient] = useState(null);
   const messageEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
   const currentUserId = parseInt(sessionStorage.getItem('userId'));
 
   // Hàm xử lý avatarUrl
@@ -15,6 +20,87 @@ export default function MessengerChatBox({ user, onClose, onBack }) {
     if (!url) return 'http://localhost:8080/images/default-avatar.png';
     return url.startsWith('http') ? url : `http://localhost:8080/images/${url}`;
   };
+
+  // Connect to WebSocket when component mounts
+  useEffect(() => {
+    if (!user?.chatRoomId) return;
+
+    // Connect to WebSocket using the Client's built-in capabilities
+    const client = new Client({
+      brokerURL: 'ws://localhost:8080/ws-chat',
+      connectHeaders: {},
+      debug: function (str) {
+        console.log(str);
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    client.onConnect = () => {
+      console.log('Connected to WebSocket');
+      
+      // Subscribe to messages from this chat room
+      client.subscribe(`/queue/chat.${user.chatRoomId}`, message => {
+        const receivedMessage = JSON.parse(message.body);
+        
+        // Handle different message types
+        if (receivedMessage.type === 'TYPING') {
+          // Only show typing indicator if the other user is typing
+          if (receivedMessage.senderId !== currentUserId) {
+            setIsTyping(true);
+            
+            // Clear previous timeout if it exists
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+            }
+            
+            // Set a timeout to hide the typing indicator after 2 seconds
+            typingTimeoutRef.current = setTimeout(() => {
+              setIsTyping(false);
+            }, 2000);
+          }
+        } else if (receivedMessage.type === 'CHAT') {
+          setMessages(prev => {
+            // Check if message already exists (to prevent duplicates)
+            const exists = prev.some(m => m.id === receivedMessage.id);
+            if (exists) return prev;
+            
+            return [...prev, {
+              id: receivedMessage.id,
+              sender: receivedMessage.senderId === currentUserId ? 'me' : 'other',
+              text: receivedMessage.content,
+              timestamp: new Date(receivedMessage.timestamp)
+            }];
+          });
+          
+          // Hide typing indicator when a message is received
+          setIsTyping(false);
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+          }
+        }
+      });
+    };
+
+    client.onStompError = (frame) => {
+      console.error('Broker reported error: ' + frame.headers['message']);
+      console.error('Additional details: ' + frame.body);
+    };
+
+    client.activate();
+    setStompClient(client);
+
+    // Cleanup on unmount
+    return () => {
+      if (client) {
+        client.deactivate();
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [user?.chatRoomId, currentUserId]);
 
   // Fetch chat history when component mounts or chatRoomId changes
   useEffect(() => {
@@ -53,36 +139,42 @@ export default function MessengerChatBox({ user, onClose, onBack }) {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Handle input changes and send typing status
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    
+    // Send typing status via WebSocket
+    if (stompClient && stompClient.connected && user?.chatRoomId) {
+      stompClient.publish({
+        destination: `/app/chat.typing/${user.chatRoomId}`,
+        body: JSON.stringify({
+          chatRoomId: user.chatRoomId,
+          senderId: currentUserId,
+          receiverId: user.id,
+          type: 'TYPING'
+        })
+      });
+    }
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || !user?.chatRoomId) return;
+    if (!input.trim() || !user?.chatRoomId || !stompClient || !stompClient.connected) return;
     
-    const newMessage = {
-      chatRoomId: user.chatRoomId,
-      senderId: currentUserId,
-      receiverId: user.id,
-      content: input.trim()
-    };
-    
-    // Optimistically add message to UI
-    setMessages(prev => [...prev, {
-      id: 'temp-' + Date.now(),
-      sender: 'me',
-      text: input.trim(),
-      timestamp: new Date()
-    }]);
+    const messageContent = input.trim();
     setInput('');
     
-    try {
-      // Send to API
-      const response = await axios.post('http://localhost:8080/chat/messages/send', newMessage);
-      console.log('Message sent:', response.data);
-      
-      // Replace temp message with real one if needed
-      // This could be enhanced with better handling of the returned message
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Could add error handling here - maybe revert the optimistic update
-    }
+    // Send message via WebSocket
+    stompClient.publish({
+      destination: `/app/chat.sendMessage/${user.chatRoomId}`,
+      body: JSON.stringify({
+        chatRoomId: user.chatRoomId,
+        senderId: currentUserId,
+        receiverId: user.id,
+        content: messageContent,
+        timestamp: new Date(),
+        type: 'CHAT'
+      })
+    });
   };
 
   const handleKeyDown = (e) => {
@@ -124,7 +216,9 @@ export default function MessengerChatBox({ user, onClose, onBack }) {
           />
           <div>
             <p className="text-sm font-semibold">{user?.Name || 'Người dùng'}</p>
-            <p className="text-xs text-gray-500">Đang hoạt động</p>
+            <p className="text-xs text-gray-500">
+              {isTyping ? 'Đang nhập...' : 'Đang hoạt động'}
+            </p>
           </div>
         </div>
         <button
@@ -167,6 +261,17 @@ export default function MessengerChatBox({ user, onClose, onBack }) {
             </div>
           ))
         )}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-gray-200 px-3 py-2 rounded-xl text-sm">
+              <span className="typing-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </span>
+            </div>
+          </div>
+        )}
         <div ref={messageEndRef} />
       </div>
 
@@ -186,7 +291,7 @@ export default function MessengerChatBox({ user, onClose, onBack }) {
           placeholder="Aa"
           className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
         />
         <button
