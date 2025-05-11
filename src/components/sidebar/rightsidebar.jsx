@@ -1,4 +1,3 @@
-// src/components/RightSidebar.jsx
 import React, { useState, useEffect } from 'react';
 import { Search, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +19,12 @@ const RightSidebar = () => {
   const currentUserId = sessionStorage.getItem('userId');
   const token = sessionStorage.getItem('token');
 
+  // Hàm xử lý avatarUrl để thêm prefix nếu cần
+  const getAvatarUrl = (url) => {
+    if (!url || url === 'default-avatar.png') return 'http://localhost:8080/images/default-avatar.png';
+    return url.startsWith('http') ? url : `http://localhost:8080/images/${url}`;
+  };
+
   useEffect(() => {
     if (!currentUserId || !token) {
       console.log('Không có userId hoặc token, chuyển hướng về login');
@@ -30,12 +35,12 @@ const RightSidebar = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Lấy lời mời kết bạn
         const friendRequestsRes = await axios.get(
           `http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const friendRequestsData = friendRequestsRes.data;
-        console.log('Friend Requests:', friendRequestsData);
         setFriendRequests(
           Array.isArray(friendRequestsData)
             ? friendRequestsData.map((f) => ({
@@ -44,16 +49,16 @@ const RightSidebar = () => {
                   f.user1?.id === parseInt(currentUserId)
                     ? f.user2?.username || 'Unknown'
                     : f.user1?.username || 'Unknown',
-                avatarUrl:
-                  f.user1?.id === parseInt(currentUserId)
-                    ? f.user2?.avatarUrl || 'https://via.placeholder.com/80'
-                    : f.user1?.avatarUrl || 'https://via.placeholder.com/80',
+                avatarUrl: getAvatarUrl(
+                  f.user1?.id === parseInt(currentUserId) ? f.user2?.avatarUrl : f.user1?.avatarUrl
+                ),
                 mutualFriends: f.mutualFriends || 0,
                 createdAt: f.createdAt || new Date().toISOString(),
               }))
             : []
         );
 
+        // Lấy danh sách bạn bè
         const friendsRes = await axios.get(
           `http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -68,11 +73,10 @@ const RightSidebar = () => {
                   f.user1?.id === parseInt(currentUserId)
                     ? f.user2?.username || 'Unknown'
                     : f.user1?.username || 'Unknown',
-                avatarUrl:
-                  f.user1?.id === parseInt(currentUserId)
-                    ? f.user2?.avatarUrl || 'https://via.placeholder.com/80'
-                    : f.user1?.avatarUrl || 'https://via.placeholder.com/80',
-                isOnline: Math.random() > 0.5,
+                avatarUrl: getAvatarUrl(
+                  f.user1?.id === parseInt(currentUserId) ? f.user2?.avatarUrl : f.user1?.avatarUrl
+                ),
+                isOnline: Math.random() > 0.5, // Giả lập trạng thái online
               }))
             : []
         );
@@ -111,10 +115,9 @@ const RightSidebar = () => {
                 f.user1?.id === parseInt(currentUserId)
                   ? f.user2?.username || 'Unknown'
                   : f.user1?.username || 'Unknown',
-              avatarUrl:
-                f.user1?.id === parseInt(currentUserId)
-                  ? f.user2?.avatarUrl || 'https://via.placeholder.com/80'
-                  : f.user1?.avatarUrl || 'https://via.placeholder.com/80',
+              avatarUrl: getAvatarUrl(
+                f.user1?.id === parseInt(currentUserId) ? f.user2?.avatarUrl : f.user1?.avatarUrl
+              ),
               isOnline: Math.random() > 0.5,
             }))
           : []
@@ -142,7 +145,7 @@ const RightSidebar = () => {
       setOpenMess(!isOpenMess);
       setUser({
         Name: friend.username,
-        Avatar: friend.avatarUrl.replace(/^https?:\/\/[^\/]+\/?(.*)$/, '$1'), // Chỉ lấy phần đường dẫn tương đối
+        Avatar: friend.avatarUrl, // Đã được xử lý bởi getAvatarUrl
       });
     }
   };
@@ -194,9 +197,11 @@ const RightSidebar = () => {
             <>
               <div className="avarta-add-friend">
                 <img
-                  src={friendRequests[0].avatarUrl || 'https://via.placeholder.com/80'}
+                  src={friendRequests[0].avatarUrl}
                   alt={friendRequests[0].username || 'Unknown'}
+                  onError={(e) => (e.target.src = 'http://localhost:8080/images/default-avatar.png')}
                   onClick={() => navigate('/profile')}
+                  loading="lazy"
                 />
               </div>
               <div className="confirm-addFriend">
@@ -255,8 +260,9 @@ const RightSidebar = () => {
               <div>
                 <div className="relative">
                   <img
-                    src={friend.avatarUrl || 'https://via.placeholder.com/80'}
+                    src={friend.avatarUrl}
                     alt={friend.username || 'Unknown'}
+                    onError={(e) => (e.target.src = 'http://localhost:8080/images/default-avatar.png')}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -264,6 +270,7 @@ const RightSidebar = () => {
                       borderRadius: '50%',
                       marginRight: '20px',
                     }}
+                    loading="lazy"
                   />
                   {friend.isOnline && (
                     <span
@@ -296,4 +303,4 @@ const RightSidebar = () => {
   );
 };
 
-export default RightSidebar;
+export default RightSidebar;  

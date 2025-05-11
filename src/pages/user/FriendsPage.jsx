@@ -1,4 +1,3 @@
-// src/pages/user/FriendsPage.js
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "../../components/ui/scroll-area";
@@ -38,7 +37,13 @@ const Sidebar = ({ selected, onSelect }) => {
 const FriendCard = ({ id, username, mutualFriends, avatarUrl, onAccept, onDelete }) => (
   <Card className="w-60">
     <CardContent className="p-4 text-center">
-      <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <img
+        src={avatarUrl}
+        alt={username}
+        className="w-20 h-20 rounded-full mx-auto mb-2"
+        onError={(e) => (e.target.src = 'http://localhost:8080/images/default-avatar.png')}
+        loading="lazy"
+      />
       <div className="font-semibold">{username}</div>
       <div className="text-sm text-gray-500 min-h-[1.25rem]">
         {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
@@ -72,7 +77,13 @@ const FriendCardSimple = ({ id, username, mutualFriends, avatarUrl, isFriend, on
   return (
     <Card className="w-60 relative">
       <CardContent className="p-4 text-center">
-        <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+        <img
+          src={avatarUrl}
+          alt={username}
+          className="w-20 h-20 rounded-full mx-auto mb-2"
+          onError={(e) => (e.target.src = 'http://localhost:8080/images/default-avatar.png')}
+          loading="lazy"
+        />
         <div className="font-semibold">{username}</div>
         <div className="text-sm text-gray-500 min-h-[1.25rem]">
           {mutualFriends > 0 ? `${mutualFriends} bạn chung` : <span> </span>}
@@ -124,7 +135,13 @@ const FriendCardSimple = ({ id, username, mutualFriends, avatarUrl, isFriend, on
 const BlockedFriendCard = ({ id, username, avatarUrl, onUnblock }) => (
   <Card className="w-60">
     <CardContent className="p-4 text-center">
-      <img src={avatarUrl || 'https://via.placeholder.com/80'} alt={username} className="w-20 h-20 rounded-full mx-auto mb-2" />
+      <img
+        src={avatarUrl}
+        alt={username}
+        className="w-20 h-20 rounded-full mx-auto mb-2"
+        onError={(e) => (e.target.src = 'http://localhost:8080/images/default-avatar.png')}
+        loading="lazy"
+      />
       <div className="font-semibold">{username}</div>
       <div className="text-sm text-gray-500 mb-2">⛔ Đã bị chặn</div>
       <button
@@ -152,10 +169,14 @@ export default function FriendsPage() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Lấy currentUserId từ sessionStorage
   const currentUserId = sessionStorage.getItem('userId');
 
-  // Lấy dữ liệu từ backend
+  // Hàm xử lý avatarUrl để thêm prefix nếu cần
+  const getAvatarUrl = (url) => {
+    if (!url || url === 'default-avatar.png') return 'http://localhost:8080/images/default-avatar.png';
+    return url.startsWith('http') ? url : `http://localhost:8080/images/${url}`;
+  };
+
   useEffect(() => {
     if (!currentUserId) {
       setError('Vui lòng đăng nhập để tiếp tục');
@@ -167,63 +188,69 @@ export default function FriendsPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Lấy lời mời kết bạn
-        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, {
+        const config = {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
           },
-        });
+        };
+
+        // Lấy lời mời kết bạn
+        const friendRequestsRes = await fetch(`http://localhost:8080/friendships/status/PENDING?userId=${currentUserId}`, config);
         if (!friendRequestsRes.ok) throw new Error('Lỗi khi lấy lời mời kết bạn');
         const friendRequestsData = await friendRequestsRes.json();
+        console.log('Friend Requests avatarUrl:', friendRequestsData.map(f => ({
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl)
+        })));
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
         // Lấy danh sách bạn bè
-        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          },
-        });
+        const friendsRes = await fetch(`http://localhost:8080/friendships/status/ACCEPTED?userId=${currentUserId}`, config);
         if (!friendsRes.ok) throw new Error('Lỗi khi lấy danh sách bạn bè');
         const friendsData = await friendsRes.json();
+        console.log('Friends avatarUrl:', friendsData.map(f => ({
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl)
+        })));
         setFriends(friendsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
         // Lấy danh sách chặn
-        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          },
-        });
+        const blockedRes = await fetch(`http://localhost:8080/friendships/status/BLOCKED?userId=${currentUserId}`, config);
         if (!blockedRes.ok) throw new Error('Lỗi khi lấy danh sách chặn');
         const blockedData = await blockedRes.json();
+        console.log('Blocked avatarUrl:', blockedData.map(f => ({
+          username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl)
+        })));
         setBlockedFriends(blockedData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
         // Lấy gợi ý kết bạn
-        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          },
-        });
+        const suggestionsRes = await fetch(`http://localhost:8080/friendships/suggestions/${currentUserId}`, config);
         if (!suggestionsRes.ok) throw new Error('Lỗi khi lấy gợi ý kết bạn');
         const suggestionsData = await suggestionsRes.json();
+        console.log('Suggestions avatarUrl:', suggestionsData.map(u => ({
+          username: u.username,
+          avatarUrl: getAvatarUrl(u.avatarUrl)
+        })));
         setSuggestions(suggestionsData.map(u => ({
           id: u.id,
           username: u.username,
-          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(u.avatarUrl),
           mutualFriends: 0
         })));
       } catch (err) {
@@ -262,7 +289,7 @@ export default function FriendsPage() {
         setSuggestions(suggestionsData.map(u => ({
           id: u.id,
           username: u.username,
-          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(u.avatarUrl),
           mutualFriends: 0
         })));
 
@@ -276,7 +303,7 @@ export default function FriendsPage() {
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
       } else {
@@ -310,7 +337,7 @@ export default function FriendsPage() {
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -324,7 +351,7 @@ export default function FriendsPage() {
         setFriends(friendsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
       } else {
@@ -358,7 +385,7 @@ export default function FriendsPage() {
         setFriendRequests(friendRequestsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -372,7 +399,7 @@ export default function FriendsPage() {
         setSuggestions(suggestionsData.map(u => ({
           id: u.id,
           username: u.username,
-          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(u.avatarUrl),
           mutualFriends: 0
         })));
       } else {
@@ -406,7 +433,7 @@ export default function FriendsPage() {
         setFriends(friendsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -420,7 +447,7 @@ export default function FriendsPage() {
         setSuggestions(suggestionsData.map(u => ({
           id: u.id,
           username: u.username,
-          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(u.avatarUrl),
           mutualFriends: 0
         })));
       } else {
@@ -454,7 +481,7 @@ export default function FriendsPage() {
         setFriends(friendsData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -468,7 +495,7 @@ export default function FriendsPage() {
         setBlockedFriends(blockedData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
       } else {
@@ -502,7 +529,7 @@ export default function FriendsPage() {
         setBlockedFriends(blockedData.map(f => ({
           id: f.id,
           username: f.user1.id === parseInt(currentUserId) ? f.user2.username : f.user1.username,
-          avatarUrl: f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(f.user1.id === parseInt(currentUserId) ? f.user2.avatarUrl : f.user1.avatarUrl),
           mutualFriends: f.mutualFriends || 0
         })));
 
@@ -516,7 +543,7 @@ export default function FriendsPage() {
         setSuggestions(suggestionsData.map(u => ({
           id: u.id,
           username: u.username,
-          avatarUrl: u.avatarUrl || 'https://via.placeholder.com/80',
+          avatarUrl: getAvatarUrl(u.avatarUrl),
           mutualFriends: 0
         })));
       } else {

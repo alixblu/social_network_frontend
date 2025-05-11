@@ -14,9 +14,16 @@ export default function MessengerChatBox({ user, onClose }) {
   const [input, setInput] = useState('');
   const messageEndRef = useRef(null);
 
+  // Hàm xử lý avatarUrl
+  const getAvatarUrl = (url) => {
+    if (!url) return 'http://localhost:8080/images/default-avatar.png';
+    return url.startsWith('http') ? url : `http://localhost:8080/images/${url}`;
+  };
+
   useEffect(() => {
+    console.log('MessengerChatBox user:', user); // Debug
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, user]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -34,9 +41,10 @@ export default function MessengerChatBox({ user, onClose }) {
       <div className="bg-[#e9e9ff] p-3 flex justify-between items-center border-b">
         <div className="flex items-center space-x-2">
           <img
-            src={user?.Avatar || 'https://via.placeholder.com/40'}
+            src={getAvatarUrl(user?.Avatar)}
             alt={user?.Name || 'Người dùng'}
             className="w-8 h-8 rounded-full"
+            onError={(e) => (e.target.src = 'http://localhost:8080/images/default-avatar.png')}
           />
           <div>
             <p className="text-sm font-semibold">{user?.Name || 'Người dùng'}</p>
