@@ -1,18 +1,14 @@
 // src/ui/chatbox.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import { NavigateNext } from '@mui/icons-material';
+import { NavigateNext, ArrowBackIosNew } from '@mui/icons-material';
+import axios from 'axios';
 
-export default function MessengerChatBox({ user, onClose }) {
-  const [messages, setMessages] = useState([
-    { sender: 'me', text: 'sao định đi thực tập à' },
-    { sender: 'other', text: 'Tại bạn tui đi' },
-    { sender: 'other', text: 'Bị áp lực' },
-    { sender: 'me', text: 'sao định đi thực tập à' },
-    { sender: 'other', text: 'Tại bạn tui đi' },
-    { sender: 'other', text: 'Bị áp lực' },
-  ]);
+export default function MessengerChatBox({ user, onClose, onBack }) {
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const messageEndRef = useRef(null);
+  const currentUserId = parseInt(sessionStorage.getItem('userId'));
 
   // Hàm xử lý avatarUrl
   const getAvatarUrl = (url) => {
@@ -20,26 +16,106 @@ export default function MessengerChatBox({ user, onClose }) {
     return url.startsWith('http') ? url : `http://localhost:8080/images/${url}`;
   };
 
+  // Fetch chat history when component mounts or chatRoomId changes
   useEffect(() => {
-    console.log('MessengerChatBox user:', user); // Debug
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, user]);
+    const fetchChatHistory = async () => {
+      if (!user?.chatRoomId) {
+        console.error('No chatRoomId provided');
+        setIsLoading(false);
+        return;
+      }
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages([...messages, { sender: 'me', text: input }]);
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`http://localhost:8080/chat/messages/${user.chatRoomId}/history`);
+        
+        // Transform the messages for display
+        const formattedMessages = response.data.map(msg => ({
+          id: msg.id,
+          sender: msg.senderId === currentUserId ? 'me' : 'other',
+          text: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+        
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error('Error fetching chat history:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChatHistory();
+  }, [user?.chatRoomId, currentUserId]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim() || !user?.chatRoomId) return;
+    
+    const newMessage = {
+      chatRoomId: user.chatRoomId,
+      senderId: currentUserId,
+      receiverId: user.id,
+      content: input.trim()
+    };
+    
+    // Optimistically add message to UI
+    setMessages(prev => [...prev, {
+      id: 'temp-' + Date.now(),
+      sender: 'me',
+      text: input.trim(),
+      timestamp: new Date()
+    }]);
     setInput('');
+    
+    try {
+      // Send to API
+      const response = await axios.post('http://localhost:8080/chat/messages/send', newMessage);
+      console.log('Message sent:', response.data);
+      
+      // Replace temp message with real one if needed
+      // This could be enhanced with better handling of the returned message
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Could add error handling here - maybe revert the optimistic update
+    }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleSend();
   };
 
+  // Format timestamps for display
+  const formatTime = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Handle back to conversation list
+  const handleBack = () => {
+    if (onBack) {
+      onBack(); // Use the provided onBack function if available
+    } else {
+      onClose(); // Fallback to onClose if onBack isn't provided
+    }
+  };
+
   return (
-    <div className="fixed bottom-4 right-10 w-[350px] h-[500px] bg-white border rounded-lg flex flex-col shadow-md overflow-hidden z-40">
+    <div className="fixed top-[60px] right-[20px] w-[340px] h-[600px] bg-white shadow-md rounded-lg flex flex-col overflow-hidden z-50">
       {/* Header */}
       <div className="bg-[#e9e9ff] p-3 flex justify-between items-center border-b">
         <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleBack}
+            className="mr-2 text-gray-600 hover:text-black"
+            title="Quay lại danh sách hội thoại"
+          >
+            <ArrowBackIosNew fontSize="small" />
+          </button>
           <img
             src={getAvatarUrl(user?.Avatar)}
             alt={user?.Name || 'Người dùng'}
@@ -48,7 +124,7 @@ export default function MessengerChatBox({ user, onClose }) {
           />
           <div>
             <p className="text-sm font-semibold">{user?.Name || 'Người dùng'}</p>
-            <p className="text-xs text-gray-500">Hoạt động 5 phút trước</p>
+            <p className="text-xs text-gray-500">Đang hoạt động</p>
           </div>
         </div>
         <button
@@ -62,24 +138,41 @@ export default function MessengerChatBox({ user, onClose }) {
 
       {/* Message List */}
       <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-[#f2f2f2]">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`max-w-fit px-3 py-2 rounded-xl text-sm break-words ${
-              msg.sender === 'me'
-                ? 'bg-blue-500 text-white self-end ml-auto'
-                : 'bg-white text-black self-start mr-auto'
-            }`}
-          >
-            {msg.text}
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">Đang tải tin nhắn...</p>
           </div>
-        ))}
+        ) : messages.length === 0 ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</p>
+          </div>
+        ) : (
+          messages.map((msg, index) => (
+            <div 
+              key={msg.id || index}
+              className="flex flex-col"
+            >
+              <div className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm break-words ${
+                  msg.sender === 'me'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-black'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+              <div className={`text-xs text-gray-500 mt-1 ${msg.sender === 'me' ? 'text-right' : 'text-left'}`}>
+                {formatTime(msg.timestamp)}
+              </div>
+            </div>
+          ))
+        )}
         <div ref={messageEndRef} />
       </div>
 
       {/* Input */}
       <div className="flex items-center border-t p-2 bg-white">
-        {['😊', '📷', 'GIF'].map((icon, idx) => (
+        {['😊', '📷'].map((icon, idx) => (
           <button
             key={idx}
             className="text-blue-500 text-xl hover:bg-blue-100 rounded-full p-1"

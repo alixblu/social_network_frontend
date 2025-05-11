@@ -122,17 +122,42 @@ function Header() {
 
   
   //Xử lí phần PopUp của Mess
-  const messList = [
-    { Avatar: "2.jpg", Name: "Thằng Đệ", Content: "Con gà mạnh" },
-    { Avatar: "3.jpg", Name: "A Hai", Content: "Hôm nay đi đá banh không?" },
-    { Avatar: "4.jpg", Name: "Bin", Content: "Hello You" },
-    { Avatar: "2.jpg", Name: "Tuấn", Content: "Con gà mạnh" },
-    { Avatar: "3.jpg", Name: "Tín", Content: "Hôm nay đi đá banh không?" },
-    { Avatar: "4.jpg", Name: "Phương Anh", Content: "Hello You" },
-    { Avatar: "2.jpg", Name: "Vũ", Content: "Con gà mạnh" },
-    { Avatar: "3.jpg", Name: "Nhật", Content: "Hôm nay đi đá banh không?" },
-    { Avatar: "4.jpg", Name: "Nam", Content: "Hello You" },
-  ];
+  const [messList, setMessList] = useState([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+
+  useEffect(() => {
+    // Fetch conversations when the component mounts
+    const fetchConversations = async () => {
+      try {
+        const userId = sessionStorage.getItem('userId');
+        if (!userId) return;
+        
+        setIsLoadingConversations(true);
+        const response = await axios.get(`http://localhost:8080/chat/messages/conversations/${userId}`);
+        
+        // Transform the data to match the expected format
+        const transformedData = response.data.map(conversation => ({
+          id: conversation.partner.id,
+          Avatar: conversation.partner.avatarUrl || "4.jpg", // Default image if no avatar
+          Name: conversation.partner.username,
+          Content: conversation.message.content,
+          chatRoomId: conversation.message.chatRoomId
+        }));
+        
+        setMessList(transformedData);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        // Set fallback data in case of error
+        setMessList([
+          { Avatar: "4.jpg", Name: "Error loading", Content: "Please try again later" }
+        ]);
+      } finally {
+        setIsLoadingConversations(false);
+      }
+    };
+
+    fetchConversations();
+  }, [activePopup]); // Reload when popup is toggled
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const filteredMessList = messList.filter((mess) =>
@@ -274,29 +299,40 @@ useEffect(() => {
                 />
               </div>
               <div className="h-[450px] overflow-y-auto scrollbar-thin">
-                {filteredMessList.map((mess, idx) => (
-                  <div
-                    onClick={() => {
-                      setSelectedUser(mess);
-                      setActivePopup(null);
-                    }}
-                    key={idx}
-                    className="relative flex items-center gap-3 p-2 rounded-lg hover:bg-[#ecedef] group"
-                  >
-                    <img
-                      className="w-[55px] h-[55px] rounded-full shrink-0"
-                      src={`./src/assets/${mess.Avatar}`}
-                      alt={mess.Name}
-                    />
-                    <div className="flex flex-col justify-start w-0 flex-1">
-                      <label className="font-semibold text-sm text-left">{mess.Name}</label>
-                      <label className="text-gray-500 text-xs text-left">{mess.Content}</label>
-                    </div>
-                    <label className="absolute right-4 p-1 bg-white rounded-full hidden group-hover:flex">
-                      <MoreHoriz />
-                    </label>
+                {isLoadingConversations ? (
+                  <div className="flex justify-center items-center h-full">
+                    <p>Đang tải...</p>
                   </div>
-                ))}
+                ) : filteredMessList.length > 0 ? (
+                  filteredMessList.map((mess, idx) => (
+                    <div
+                      onClick={() => {
+                        setSelectedUser({...mess, chatRoomId: mess.chatRoomId});
+                        setActivePopup(null);
+                      }}
+                      key={idx}
+                      className="relative flex items-center gap-3 p-2 rounded-lg hover:bg-[#ecedef] group"
+                    >
+                      <img
+                        className="w-[55px] h-[55px] rounded-full shrink-0"
+                        src={mess.Avatar.startsWith('http') ? mess.Avatar : `http://localhost:8080/images/${mess.Avatar}`}
+                        alt={mess.Name}
+                        onError={(e) => {e.target.src = './src/assets/4.jpg'}}
+                      />
+                      <div className="flex flex-col justify-start w-0 flex-1">
+                        <label className="font-semibold text-sm text-left">{mess.Name}</label>
+                        <label className="text-gray-500 text-xs text-left">{mess.Content}</label>
+                      </div>
+                      <label className="absolute right-4 p-1 bg-white rounded-full hidden group-hover:flex">
+                        <MoreHoriz />
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-center items-center h-full">
+                    <p>Không có cuộc trò chuyện nào</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -375,6 +411,10 @@ useEffect(() => {
         <MessengerChatBox
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
+          onBack={() => {
+            setSelectedUser(null);
+            togglePopup("mess");
+          }}
         />
       )}
     <ToastContainer position="top-right" />
