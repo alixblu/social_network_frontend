@@ -169,11 +169,10 @@ function Header() {
   const [showGroupInfoModal, setShowGroupInfoModal] = useState(false); // Add state for group info modal
   const [selectedAiBot, setSelectedAiBot] = useState(null); // Add state for selected AI bot
   const [aiBots, setAiBots] = useState([]); // State for AI bots fetched from backend
-  const [activeAiProvider, setActiveAiProvider] = useState('openai'); // State for active AI provider (openai or rasa)
-  const [aiUserMessages, setAiUserMessages] = useState([]); // User messages for AI chat
-  const [aiResponses, setAiResponses] = useState([]); // AI responses
+  const [activeAiProvider, setActiveAiProvider] = useState('rasa'); // State for active AI provider (only rasa now)
   const [aiChatInput, setAiChatInput] = useState(''); // Input for AI chat
   const [isAiTyping, setIsAiTyping] = useState(false); // AI typing indicator
+  const [aiChatHistory, setAiChatHistory] = useState([]);
   
   const filteredMessList = messList.filter((mess) =>
     mess.Name.toLowerCase().includes(searchKeyword.toLowerCase())
@@ -225,8 +224,7 @@ useEffect(() => {
         console.error('Error fetching AI bots:', error);
         // Fallback bots if API fails
         setAiBots([
-          { id: 'spring-bot', name: 'Spring Bot', avatarUrl: './src/assets/1.png', description: 'Trợ giúp về Spring Boot' },
-          { id: 'java-bot', name: 'Java Helper', avatarUrl: './src/assets/2.jpg', description: 'Giải đáp vấn đề Java' },
+          { id: 'rasa-bot', name: 'Rasa with Phi', avatarUrl: './src/assets/2.jpg', description: 'Trợ lý với Phi Model' },
         ]);
       }
     };
@@ -239,55 +237,45 @@ useEffect(() => {
   // Function to send message to AI bot
   const sendMessageToAiBot = async () => {
     if (!aiChatInput.trim() || !selectedAiBot) return;
-    
+
     const userId = sessionStorage.getItem('userId');
     if (!userId) return;
-    
-    // Add user message to chat
+
+    // Add user message to chat history
     const newUserMsg = {
       content: aiChatInput,
       timestamp: new Date(),
-      isUser: true
+      role: "user"
     };
-    
-    setAiUserMessages(prev => [...prev, newUserMsg]);
+    setAiChatHistory(prev => [...prev, newUserMsg]);
     setAiChatInput('');
     setIsAiTyping(true);
-    
+
     try {
-      // Call the correct endpoint based on active provider
-      const endpoint = activeAiProvider === 'rasa' 
-        ? 'http://localhost:8080/ai/rasa/chat'
-        : 'http://localhost:8080/ai/chat';
-      
+      const endpoint = 'http://localhost:8080/ai/rasa/chat';
       const response = await axios.post(endpoint, {
         userId: parseInt(userId),
         botId: selectedAiBot.id,
-        message: newUserMsg.content
+        message: aiChatInput.trim()
       });
-      
-      // Add AI response to chat
+
+      // Add AI response to chat history
       const aiResponse = {
         content: response.data.content,
         timestamp: new Date(),
-        isUser: false
+        role: "ai"
       };
-      
-      setAiResponses(prev => [...prev, aiResponse]);
+      setAiChatHistory(prev => [...prev, aiResponse]);
     } catch (error) {
-      console.error('Error sending message to AI:', error);
-      
-      // Add error message
       const errorResponse = {
         content: 'Đã xảy ra lỗi khi kết nối với AI. Vui lòng thử lại sau.',
         timestamp: new Date(),
-        isUser: false,
+        role: "ai",
         isError: true
       };
-      
-      setAiResponses(prev => [...prev, errorResponse]);
+      setAiChatHistory(prev => [...prev, errorResponse]);
     }
-    
+
     setIsAiTyping(false);
   };
 
@@ -509,49 +497,25 @@ useEffect(() => {
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-gray-500 mb-4">Chọn AI để trò chuyện</h3>
                     
-                    {/* AI Bot selection - simplified to just OpenAI and Rasa */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {/* OpenAI */}
+                    {/* AI Bot selection - only Rasa with Phi via Ollama */}
+                    <div className="flex justify-center mb-4">
+                      {/* Rasa with Phi via Ollama */}
                       <div 
-                        className="flex flex-col items-center p-3 border rounded-lg hover:bg-[#ecedef] cursor-pointer"
-                        onClick={() => {
-                          setSelectedAiBot({
-                            id: 'openai-bot',
-                            name: 'OpenAI',
-                            avatar: './src/assets/1.png',
-                            provider: 'openai'
-                          });
-                          // Clear previous messages when switching bots
-                          setAiUserMessages([]);
-                          setAiResponses([]);
-                          setActivePopup(null);
-                        }}
-                      >
-                        <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mb-2">
-                          <img 
-                            src='./src/assets/1.png' 
-                            alt='OpenAI'
-                            className="w-10 h-10"
-                            onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
-                          />
-                        </div>
-                        <h4 className="text-sm font-semibold">OpenAI</h4>
-                        <p className="text-xs text-gray-500 text-center mt-1">Trợ lý thông minh với GPT</p>
-                      </div>
-                      
-                      {/* Rasa */}
-                      <div 
-                        className="flex flex-col items-center p-3 border rounded-lg hover:bg-[#ecedef] cursor-pointer"
+                        className="flex flex-col items-center p-3 border rounded-lg hover:bg-[#ecedef] cursor-pointer w-full"
                         onClick={() => {
                           setSelectedAiBot({
                             id: 'rasa-bot',
-                            name: 'Rasa',
+                            name: 'Rasa (Phi via Ollama)',
                             avatar: './src/assets/2.jpg',
-                            provider: 'rasa'
+                            provider: 'rasa',
+                            model: 'phi'
                           });
                           // Clear previous messages when switching bots
-                          setAiUserMessages([]);
-                          setAiResponses([]);
+                          setAiChatHistory([{
+                            content: "Hello! I'm your AI assistant powered by Rasa and Phi Model. How can I assist you today?",
+                            timestamp: new Date(),
+                            role: "ai"
+                          }]);
                           setActivePopup(null);
                         }}
                       >
@@ -563,8 +527,8 @@ useEffect(() => {
                             onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
                           />
                         </div>
-                        <h4 className="text-sm font-semibold">Rasa</h4>
-                        <p className="text-xs text-gray-500 text-center mt-1">Trợ lý với Rasa NLU</p>
+                        <h4 className="text-sm font-semibold">Rasa + Ollama</h4>
+                        <p className="text-xs text-gray-500 text-center mt-1">Trợ lý với Phi Model</p>
                       </div>
                     </div>
 
@@ -798,44 +762,30 @@ useEffect(() => {
 
           {/* Message List */}
           <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-[#f2f2f2]">
-            {/* Sample messages */}
-            {[1, 2, 3, 4, 5].map((idx) => {
-              const isMe = idx % 2 === 0;
-              const sender = isMe ? "Bạn" : `User ${idx % 4 + 1}`;
-              const messages = [
-                "Xin chào mọi người!",
-                "Chúng ta họp lúc mấy giờ nhỉ?",
-                "2h chiều nay nhé!",
-                "Ok, tôi sẽ có mặt",
-                "Tôi xin phép đến trễ 15 phút nhé"
-              ];
-              
-              return (
-                <div key={idx} className="flex flex-col">
-                  {!isMe && (
-                    <div className="flex items-center gap-1 mb-1">
-                      <img 
-                        src={`./src/assets/${idx % 4 + 1}.jpg`}
-                        alt={sender}
-                        className="w-5 h-5 rounded-full"
-                        onError={(e) => {e.target.src = './src/assets/4.jpg'}}
+            {aiChatHistory.map((msg, idx) => (
+              <div key={idx} className="flex flex-col">
+                <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} items-center gap-1 mb-1`}>
+                  {msg.role === "ai" && (
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                      <img
+                        src={selectedAiBot.avatar}
+                        alt={selectedAiBot.name}
+                        className="w-4 h-4"
+                        onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
                       />
-                      <span className="text-xs font-medium">{sender}</span>
                     </div>
                   )}
-                  <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm break-words ${
-                      isMe ? 'bg-blue-500 text-white' : 'bg-white text-black'
-                    }`}>
-                      {messages[idx - 1]}
-                    </div>
-                  </div>
-                  <div className={`text-xs text-gray-500 mt-1 ${isMe ? 'text-right' : 'text-left'}`}>
-                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm break-words ${
+                    msg.role === "user" ? "bg-blue-500 text-white" : (msg.isError ? "bg-red-100 text-red-800" : "bg-white text-black")
+                  }`}>
+                    {msg.content}
                   </div>
                 </div>
-              );
-            })}
+                <div className={`text-xs text-gray-500 mt-1 ${msg.role === "user" ? "text-right" : "text-left"}`}>
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Input */}
@@ -1007,11 +957,16 @@ useEffect(() => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">{selectedAiBot.name}</p>
-                <p className="text-xs text-gray-500 truncate">
+                <div className="flex gap-1 flex-wrap">
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                    {selectedAiBot.provider === 'rasa' ? 'Rasa' : 'OpenAI'}
+                    Rasa
                   </span>
-                </p>
+                  {selectedAiBot.model && (
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                      Model: {selectedAiBot.model}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <button
@@ -1025,90 +980,30 @@ useEffect(() => {
 
           {/* Message List */}
           <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-[#f2f2f2]">
-            {/* AI welcome message */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1 mb-1">
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                  <img 
-                    src={selectedAiBot.avatar}
-                    alt={selectedAiBot.name}
-                    className="w-4 h-4"
-                    onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
-                  />
-                </div>
-                <span className="text-xs font-medium">{selectedAiBot.name}</span>
-              </div>
-              <div className="flex justify-start">
-                <div className="max-w-[70%] px-3 py-2 rounded-xl text-sm break-words bg-white text-black">
-                  Xin chào! Tôi là {selectedAiBot.name}. Tôi có thể giúp gì cho bạn hôm nay?
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1 text-left">
-                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-            
-            {/* User messages */}
-            {aiUserMessages.map((msg, idx) => (
-              <div key={`user-${idx}`} className="flex flex-col">
-                <div className="flex justify-end">
-                  <div className="max-w-[70%] px-3 py-2 rounded-xl text-sm break-words bg-blue-500 text-white">
-                    {msg.content}
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1 text-right">
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            ))}
-            
-            {/* AI responses */}
-            {aiResponses.map((msg, idx) => (
-              <div key={`ai-${idx}`} className="flex flex-col">
-                <div className="flex items-center gap-1 mb-1">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                    <img 
-                      src={selectedAiBot.avatar}
-                      alt={selectedAiBot.name}
-                      className="w-4 h-4"
-                      onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
-                    />
-                  </div>
-                  <span className="text-xs font-medium">{selectedAiBot.name}</span>
-                </div>
-                <div className="flex justify-start">
+            {aiChatHistory.map((msg, idx) => (
+              <div key={idx} className="flex flex-col">
+                <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} items-center gap-1 mb-1`}>
+                  {msg.role === "ai" && (
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                      <img
+                        src={selectedAiBot.avatar}
+                        alt={selectedAiBot.name}
+                        className="w-4 h-4"
+                        onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
+                      />
+                    </div>
+                  )}
                   <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm break-words ${
-                    msg.isError ? 'bg-red-100 text-red-800' : 'bg-white text-black'
+                    msg.role === "user" ? "bg-blue-500 text-white" : (msg.isError ? "bg-red-100 text-red-800" : "bg-white text-black")
                   }`}>
                     {msg.content}
                   </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-1 text-left">
+                <div className={`text-xs text-gray-500 mt-1 ${msg.role === "user" ? "text-right" : "text-left"}`}>
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             ))}
-            
-            {/* Typing indicator */}
-            {isAiTyping && (
-              <div className="flex items-center gap-1">
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                  <img 
-                    src={selectedAiBot.avatar}
-                    alt={selectedAiBot.name}
-                    className="w-4 h-4"
-                    onError={(e) => {e.target.src = 'http://localhost:8080/images/default-avatar.png'}}
-                  />
-                </div>
-                <div className="bg-white px-3 py-2 rounded-xl">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Input */}
@@ -1136,34 +1031,15 @@ useEffect(() => {
           
           {/* Feature pills based on bot type */}
           <div className="bg-white p-2 border-t flex gap-2 overflow-x-auto scrollbar-thin">
-            {selectedAiBot.id === 'spring-bot' ? (
-              <>
-                <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                  Spring Boot
-                </span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                  Spring Security
-                </span>
-              </>
-            ) : selectedAiBot.id === 'java-bot' ? (
-              <>
-                <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                  Java Collections
-                </span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                  Java Streams
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                  Giúp đỡ chung
-                </span>
-                <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                  Gợi ý code
-                </span>
-              </>
-            )}
+            <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
+              Trợ lý thông minh
+            </span>
+            <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
+              Phi Model
+            </span>
+            <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full whitespace-nowrap">
+              Chạy cục bộ
+            </span>
           </div>
         </div>
       )}
