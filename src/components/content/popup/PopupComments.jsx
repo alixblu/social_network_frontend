@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Clear } from '@mui/icons-material';
-import axios from 'axios';
+import { Clear } from "@mui/icons-material";
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 
-function PopupComments({ id: userId, postId, onClose }) {
+function PopupComments({ currentId, postId, onClose, updateCommentCount }) {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
+
+
+
+
+    const commentsEndRef = useRef(null);
+    useEffect(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [comments]);
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -24,22 +32,18 @@ function PopupComments({ id: userId, postId, onClose }) {
         };
     }, [postId]);
 
-    // ✅ Hàm gửi comment mới
     const createComment = async () => {
-        console.log(userId)
-        console.log(postId)
         if (!newComment.trim()) return;
         try {
             const res = await axios.post('http://localhost:8080/comments/create', null, {
                 params: {
-                    userId,
+                    userId: currentId,
                     postId,
                     content: newComment.trim()
                 }
             });
 
-
-            // Cập nhật bình luận mới vào danh sách
+            await updateCommentCount();  // Gọi hàm callback từ PostItem
             setComments(prev => [...prev, res.data]);
             setNewComment('');
         } catch (err) {
@@ -64,6 +68,7 @@ function PopupComments({ id: userId, postId, onClose }) {
                             <div className="text-sm text-gray-700">{cmt.content}</div>
                         </div>
                     ))}
+                    <div ref={commentsEndRef} />
                 </div>
 
                 {/* Footer */}
@@ -90,4 +95,4 @@ function PopupComments({ id: userId, postId, onClose }) {
     );
 }
 
-export default PopupComments;
+export default PopupComments

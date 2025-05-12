@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Header from "../../components/header/header";
+import PostItem from "../../components/content/PostItem"
+import SharePostItem from "../../components/content/SharePostItem"
 import {
   Add,
   Camera,
@@ -132,6 +134,95 @@ function Profile() {
 
   const [showPassword, setShowPassword] = useState(false);
 
+  const fetchOriginalPosts = async (userId) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await axios.get(`http://localhost:8080/posts/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const posts = response.data.map(post => ({
+        ...post,
+        time : post.createdAt,
+        type: "post",
+      }));
+
+      return posts;
+    } catch (error) {
+      console.error("Lỗi khi lấy bài viết gốc:", error);
+      return [];
+    }
+  };
+
+
+  const fetchSharedPosts = async (userId) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await axios.get(`http://localhost:8080/shares/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Ảo")
+      console.log(response.data)
+
+      const sharedPosts = response.data.map(post => ({
+        ...post,
+        time : post.sharedAt,
+        type: "share",
+      }));
+
+      return sharedPosts;
+    } catch (error) {
+      console.error("Lỗi khi lấy bài viết chia sẻ:", error);
+      return [];
+    }
+  };
+
+
+  useEffect(() => {
+    if (user.id) {
+      const fetchAllPosts = async () => {
+        const [originalPosts, sharedPosts] = await Promise.all([
+          fetchOriginalPosts(user.id),
+          fetchSharedPosts(user.id),
+        ]);
+
+        const allPosts = [...originalPosts, ...sharedPosts].sort(
+          (a, b) => new Date(b.time) - new Date(a.time)
+        );
+
+        setPostItem(allPosts);
+      };
+
+      fetchAllPosts();
+    }
+  }, [user]);
+
+const onDeleteSuccess = (deletedPostId, type) => {
+  setPostItem((prevPosts) =>
+    prevPosts.filter((post) => {
+      // Nếu type là "post", chỉ xóa post thường
+      if (type === "post") {
+        return !(post.id === deletedPostId && post.type === "post");
+      }
+      // Nếu type là "share", chỉ xóa bài chia sẻ
+      if (type === "share") {
+        return !(post.id === deletedPostId && post.type === "share");
+      }
+      // Nếu type không rõ ràng, giữ lại bài viết
+      return true;
+    })
+  );
+};
+
+
+
+  const [postItem , setPostItem] = useState([null])
+  const [sharePostItem, setSharePostItem] = useState([null])
 
   return (
     <div className="flex flex-col relative justify-center h-auto">
@@ -232,39 +323,20 @@ function Profile() {
 
             {/* Bài viết */}
             <div className="w-auto xl:max-w-[60%] space-y-3">
-              <div className="bg-white shadow-md p-4 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://i.pravatar.cc/150?img=3"
-                    alt="avatar"
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Nguyễn Văn A</h4>
-                    <p className="text-sm text-gray-500">3 giờ trước · 🌍</p>
-                  </div>
-                </div>
-                <div className="mt-3 text-gray-800">
-                  Cuối tuần chill cùng bạn bè 🍃☕ Ai muốn đi Đà Lạt giơ tay nào 🙋‍♂️🙋‍♀️
-                </div>
-                <img
-                  src="../src/assets/1.png"
-                  alt="post"
-                  className="w-full mt-3 rounded-md"
-                />
-                <div className="flex justify-between items-center mt-4 border-t pt-2 text-gray-600 text-sm">
-                  <button className="hover:text-blue-500 flex items-center gap-1">
-                    <ThumbUpOutlined /> Thích
-                  </button>
-                  <button className="hover:text-blue-500 flex items-center gap-1">
-                    <ChatBubbleOutline /> Bình luận
-                  </button>
-                  <button className="hover:text-blue-500 flex items-center gap-1">
-                    <ShareRounded /> Chia sẻ
-                  </button>
-                </div>
-              </div>
+              {postItem.length > 0 && postItem[0] !== null ? (
+                  postItem.map((post) => (
+                    post.type === "share" ? (
+                      <SharePostItem post={post} currentId={user.id} onDeleteSuccess={onDeleteSuccess} type="share" exit={() => {}} />
+                    ) : (
+                      <PostItem post={post} currentId={user.id} onDeleteSuccess={onDeleteSuccess} type="post" exit={() => {}} />
+                    )
+                  ))
+                ) : (
+                  <p className="text-center text-[20px] text-red-500">Chưa có bài viết nào.</p>
+                )}
             </div>
+
+
           </div>
         </div>
       </div>
