@@ -31,19 +31,12 @@ import { useNavigate } from "react-router-dom";
 import MessengerChatBox from "../ui/chatbox";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios"
-
-
+import axios from "axios";
+import NotificationPopup from "./NotificationPopup";
 
 function Header() {
-
-
-
   const [isAdmin, setAdmin] = useState(false);
-
   const [user, setUser] = useState("");
-
-  //Xử lí các Navigate chuyển hướng
   const navigate = useNavigate();
   const BackToHome = () => navigate("/home");
   const GoToProfile = () => navigate("/profile");
@@ -53,14 +46,7 @@ function Header() {
     sessionStorage.removeItem("token");
   };
 
-
-
-
-
-
-  // Xử lí phần xuất hiện của Popup
   const [activePopup, setActivePopup] = useState(null);
-
   const togglePopup = (popupName) => {
     setActivePopup(activePopup === popupName ? null : popupName);
   };
@@ -79,10 +65,6 @@ function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activePopup]);
 
-
-
-
-  // Popup của Menu
   const menuItems = [
     { icon: <Settings />, text: "Cài đặt và quyền riêng tư" },
     { icon: <QuestionMark />, text: "Trợ giúp và hỗ trợ" },
@@ -94,11 +76,8 @@ function Header() {
     { icon: <MeetingRoom />, text: "Đăng xuất", link: "/login" },
   ];
 
-
-  // Thêm các đường link và hàm navigate cho middle icons
   const handleNavigate = (path) => {
     navigate(path);
-    // Đóng tất cả popup nếu có
     setActivePopup(null);
   };
 
@@ -121,36 +100,26 @@ function Header() {
     ));
 
   const [selectedUser, setSelectedUser] = useState(null);
-
-
-  
-  //Xử lí phần PopUp của Mess
   const [messList, setMessList] = useState([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
 
   useEffect(() => {
-    // Fetch conversations when the component mounts
     const fetchConversations = async () => {
       try {
         const userId = sessionStorage.getItem('userId');
         if (!userId) return;
-        
         setIsLoadingConversations(true);
         const response = await axios.get(`http://localhost:8080/chat/messages/conversations/${userId}`);
-        
-        // Transform the data to match the expected format
         const transformedData = response.data.map(conversation => ({
           id: conversation.partner.id,
-          Avatar: conversation.partner.avatarUrl || "4.jpg", // Default image if no avatar
+          Avatar: conversation.partner.avatarUrl || "4.jpg",
           Name: conversation.partner.username,
           Content: conversation.message.content,
           chatRoomId: conversation.message.chatRoomId
         }));
-        
         setMessList(transformedData);
       } catch (error) {
         console.error("Error fetching conversations:", error);
-        // Set fallback data in case of error
         setMessList([
           { Avatar: "4.jpg", Name: "Error loading", Content: "Please try again later" }
         ]);
@@ -158,63 +127,56 @@ function Header() {
         setIsLoadingConversations(false);
       }
     };
-
     fetchConversations();
-  }, [activePopup]); // Reload when popup is toggled
+  }, [activePopup]);
 
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [activeMessTab, setActiveMessTab] = useState("inbox"); // Add state for active tab
-  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false); // Add state for modal
-  const [selectedGroupChat, setSelectedGroupChat] = useState(null); // Add state for selected group chat
-  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false); // Add state for group info modal
-  const [selectedAiBot, setSelectedAiBot] = useState(null); // Add state for selected AI bot
-  const [aiBots, setAiBots] = useState([]); // State for AI bots fetched from backend
-  const [activeAiProvider, setActiveAiProvider] = useState('rasa'); // State for active AI provider (only rasa now)
-  const [aiChatInput, setAiChatInput] = useState(''); // Input for AI chat
-  const [isAiTyping, setIsAiTyping] = useState(false); // AI typing indicator
+  const [activeMessTab, setActiveMessTab] = useState("inbox");
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [selectedGroupChat, setSelectedGroupChat] = useState(null);
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
+  const [selectedAiBot, setSelectedAiBot] = useState(null);
+  const [aiBots, setAiBots] = useState([]);
+  const [activeAiProvider, setActiveAiProvider] = useState('rasa');
+  const [aiChatInput, setAiChatInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const [aiChatHistory, setAiChatHistory] = useState([]);
-  
+
   const filteredMessList = messList.filter((mess) =>
     mess.Name.toLowerCase().includes(searchKeyword.toLowerCase())
   );
- 
-  //Xử lí phần đăng xuất
+
   const handleLogout = () => {
     const confirmLogout = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
     if (confirmLogout) {
       toast.success("Đăng xuất thành công!", { autoClose: 2000 });
       setTimeout(() => {
-        BackToLogin()
-      }, 2000); // đợi toast hiện rồi mới chuyển trang
+        BackToLogin();
+      }, 2000);
     }
   };
-  
-  //Data từ sessionStorage
-useEffect(() => {
-    const token = sessionStorage.getItem("token"); // ✅ đúng
 
+  useEffect(() => {
+    const token = sessionStorage.getItem("token");
     if (!token) {
       BackToLogin();
       return;
     }
-    console.log('Token in Header:', token);
     axios.get("http://localhost:8080/users/getUserByToken", {
       headers: {
-        Authorization: `Bearer ${token}` // Sử dụng token trực tiếp
+        Authorization: `Bearer ${token}`
       }
     })
     .then(response => {
       setUser(response.data);
       setAdmin(response.data.isAdmin);
-      console.log('User data in Header:', response.data);
     })
     .catch(error => {
       console.error("Lỗi lấy thông tin user trong Header:", error);
-      BackToLogin(); // Chuyển về login nếu lỗi
+      BackToLogin();
     });
   }, []);
 
-  // Fetch AI bots from backend
   useEffect(() => {
     const fetchAiBots = async () => {
       try {
@@ -222,26 +184,20 @@ useEffect(() => {
         setAiBots(response.data);
       } catch (error) {
         console.error('Error fetching AI bots:', error);
-        // Fallback bots if API fails
         setAiBots([
           { id: 'rasa-bot', name: 'Rasa with Phi', avatarUrl: './src/assets/2.jpg', description: 'Trợ lý với Phi Model' },
         ]);
       }
     };
-    
     if (activePopup === 'mess' && activeMessTab === 'ai') {
       fetchAiBots();
     }
   }, [activePopup, activeMessTab]);
-  
-  // Function to send message to AI bot
+
   const sendMessageToAiBot = async () => {
     if (!aiChatInput.trim() || !selectedAiBot) return;
-
     const userId = sessionStorage.getItem('userId');
     if (!userId) return;
-
-    // Add user message to chat history
     const newUserMsg = {
       content: aiChatInput,
       timestamp: new Date(),
@@ -250,7 +206,6 @@ useEffect(() => {
     setAiChatHistory(prev => [...prev, newUserMsg]);
     setAiChatInput('');
     setIsAiTyping(true);
-
     try {
       const endpoint = 'http://localhost:8080/ai/rasa/chat';
       const response = await axios.post(endpoint, {
@@ -258,8 +213,6 @@ useEffect(() => {
         botId: selectedAiBot.id,
         message: aiChatInput.trim()
       });
-
-      // Add AI response to chat history
       const aiResponse = {
         content: response.data.content,
         timestamp: new Date(),
@@ -275,7 +228,6 @@ useEffect(() => {
       };
       setAiChatHistory(prev => [...prev, errorResponse]);
     }
-
     setIsAiTyping(false);
   };
 
@@ -310,7 +262,6 @@ useEffect(() => {
         <img
           onClick={() => togglePopup("acc")}
           title="Tài khoản"
-          // src="./src/assets/1.png"
           src={`http://localhost:8080/images/${user.avatarUrl}`}
           alt="Avatar"
         />
@@ -391,36 +342,35 @@ useEffect(() => {
                   onClick={() => setActiveMessTab('ai')}
                 />
               </div>
-              
               {activeMessTab === 'inbox' ? (
-              <div className="h-[450px] overflow-y-auto scrollbar-thin">
+                <div className="h-[450px] overflow-y-auto scrollbar-thin">
                   {isLoadingConversations ? (
                     <div className="flex justify-center items-center h-full">
                       <p>Đang tải...</p>
                     </div>
                   ) : filteredMessList.length > 0 ? (
                     filteredMessList.map((mess, idx) => (
-                  <div
-                    onClick={() => {
+                      <div
+                        onClick={() => {
                           setSelectedUser({...mess, chatRoomId: mess.chatRoomId});
-                      setActivePopup(null);
-                    }}
-                    key={idx}
-                    className="relative flex items-center gap-3 p-2 rounded-lg hover:bg-[#ecedef] group"
-                  >
-                    <img
-                      className="w-[55px] h-[55px] rounded-full shrink-0"
+                          setActivePopup(null);
+                        }}
+                        key={idx}
+                        className="relative flex items-center gap-3 p-2 rounded-lg hover:bg-[#ecedef] group"
+                      >
+                        <img
+                          className="w-[55px] h-[55px] rounded-full shrink-0"
                           src={mess.Avatar.startsWith('http') ? mess.Avatar : `http://localhost:8080/images/${mess.Avatar}`}
-                      alt={mess.Name}
+                          alt={mess.Name}
                           onError={(e) => {e.target.src = './src/assets/4.jpg'}}
-                    />
-                    <div className="flex flex-col justify-start w-0 flex-1">
-                      <label className="font-semibold text-sm text-left">{mess.Name}</label>
-                      <label className="text-gray-500 text-xs text-left">{mess.Content}</label>
-                    </div>
-                    <label className="absolute right-4 p-1 bg-white rounded-full hidden group-hover:flex">
-                      <MoreHoriz />
-                    </label>
+                        />
+                        <div className="flex flex-col justify-start w-0 flex-1">
+                          <label className="font-semibold text-sm text-left">{mess.Name}</label>
+                          <label className="text-gray-500 text-xs text-left">{mess.Content}</label>
+                        </div>
+                        <label className="absolute right-4 p-1 bg-white rounded-full hidden group-hover:flex">
+                          <MoreHoriz />
+                        </label>
                       </div>
                     ))
                   ) : (
@@ -431,7 +381,6 @@ useEffect(() => {
                 </div>
               ) : activeMessTab === 'community' ? (
                 <div className="h-[450px] overflow-y-auto scrollbar-thin">
-                  {/* Community tab content */}
                   <div className="p-3">
                     <div 
                       className="flex items-center gap-3 p-3 mb-4 rounded-lg hover:bg-[#ecedef] cursor-pointer border border-dashed border-gray-300"
@@ -445,8 +394,6 @@ useEffect(() => {
                         <label className="text-gray-500 text-xs text-left">Tạo nhóm chat với bạn bè</label>
                       </div>
                     </div>
-                    
-                    {/* Existing group chats would be mapped here */}
                     <div className="mt-3 space-y-1">
                       <h3 className="text-sm font-semibold text-gray-500 mb-2">Nhóm chat của bạn</h3>
                       {[1, 2, 3].map((idx) => (
@@ -454,7 +401,6 @@ useEffect(() => {
                           key={idx}
                           className="relative flex items-center gap-3 p-2 rounded-lg hover:bg-[#ecedef] group cursor-pointer"
                           onClick={() => {
-                            // Select group chat and close popup
                             setSelectedGroupChat({
                               id: idx,
                               name: `Nhóm chat ${idx}`,
@@ -493,13 +439,9 @@ useEffect(() => {
                 </div>
               ) : (
                 <div className="h-[450px] overflow-y-auto scrollbar-thin">
-                  {/* AI Chat section */}
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-gray-500 mb-4">Chọn AI để trò chuyện</h3>
-                    
-                    {/* AI Bot selection - only Rasa with Phi via Ollama */}
                     <div className="flex justify-center mb-4">
-                      {/* Rasa with Phi via Ollama */}
                       <div 
                         className="flex flex-col items-center p-3 border rounded-lg hover:bg-[#ecedef] cursor-pointer w-full"
                         onClick={() => {
@@ -510,7 +452,6 @@ useEffect(() => {
                             provider: 'rasa',
                             model: 'phi'
                           });
-                          // Clear previous messages when switching bots
                           setAiChatHistory([{
                             content: "Hello! I'm your AI assistant powered by Rasa and Phi Model. How can I assist you today?",
                             timestamp: new Date(),
@@ -531,7 +472,6 @@ useEffect(() => {
                         <p className="text-xs text-gray-500 text-center mt-1">Trợ lý với Phi Model</p>
                       </div>
                     </div>
-
                   </div>
                 </div>
               )}
@@ -540,13 +480,7 @@ useEffect(() => {
         )}
 
         {activePopup === "noti" && (
-          <div className="noti-popup">
-            <div className="noti-content">
-              <h3>Thông báo</h3>
-              <p>Nội dung thông báo</p>
-              <button onClick={() => setActivePopup(null)}>Đóng</button>
-            </div>
-          </div>
+          <NotificationPopup onClose={() => setActivePopup(null)} />
         )}
 
         {activePopup === "acc" && (
@@ -555,7 +489,7 @@ useEffect(() => {
               <div onClick={GoToProfile} className="acc1">
                 <img src={`http://localhost:8080/images/${user.avatarUrl}`} alt="Avatar" />
                 <label className="text-black font-semibold text-[17px]">
-                  {user?.username|| "Người dùng"}
+                  {user?.username || "Người dùng"}
                 </label>
               </div>
               <div className="acc2"></div>
@@ -589,7 +523,6 @@ useEffect(() => {
                 </div>
               ))}
             </div>
-
             <div className="acc-footer">
               {[
                 "Quyền riêng tư",
@@ -618,8 +551,6 @@ useEffect(() => {
           }}
         />
       )}
-      
-      {/* Create Group Chat Modal */}
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[500px] max-h-[80vh] overflow-hidden">
@@ -632,7 +563,6 @@ useEffect(() => {
                 ×
               </button>
             </div>
-            
             <div className="p-4 max-h-[60vh] overflow-y-auto">
               <div className="mb-4">
                 <label className="block mb-2 font-medium">Tên nhóm</label>
@@ -642,7 +572,6 @@ useEffect(() => {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
               <div className="mb-4">
                 <label className="block mb-2 font-medium">Thêm thành viên</label>
                 <div className="flex items-center mb-2">
@@ -652,7 +581,6 @@ useEffect(() => {
                     className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
                 <div className="mt-3">
                   <h4 className="text-sm font-semibold text-gray-500 mb-2">Bạn bè</h4>
                   <div className="space-y-2 max-h-[200px] overflow-y-auto">
@@ -676,7 +604,6 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
-              
               <div className="flex items-center gap-2 mt-2">
                 <div className="p-1 bg-gray-100 rounded-lg">
                   <img 
@@ -695,7 +622,6 @@ useEffect(() => {
                 <span className="text-sm text-gray-500">+2 người khác</span>
               </div>
             </div>
-            
             <div className="p-4 border-t flex justify-end">
               <button 
                 onClick={() => setShowCreateGroupModal(false)}
@@ -830,7 +756,6 @@ useEffect(() => {
                 ×
               </button>
             </div>
-            
             <div className="p-4 max-h-[60vh] overflow-y-auto">
               {/* Group info */}
               <div className="flex items-center justify-center flex-col mb-6">
@@ -844,7 +769,6 @@ useEffect(() => {
                 </div>
                 <h3 className="text-lg font-bold">{selectedGroupChat.name}</h3>
                 <p className="text-sm text-gray-500">{selectedGroupChat.members.length} thành viên</p>
-                
                 <div className="mt-4 flex space-x-4">
                   <button className="flex flex-col items-center text-gray-600">
                     <div className="w-[40px] h-[40px] bg-gray-100 rounded-full flex items-center justify-center mb-1">
@@ -882,7 +806,6 @@ useEffect(() => {
                   <h4 className="font-medium">Thành viên nhóm</h4>
                   <button className="text-blue-500 text-sm">+ Thêm thành viên</button>
                 </div>
-                
                 <div className="space-y-3">
                   {/* Admin */}
                   <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50">
@@ -899,8 +822,6 @@ useEffect(() => {
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Other members */}
                   {selectedGroupChat.members.slice(1).map((member, idx) => (
                     <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50">
                       <div className="flex items-center gap-3">
@@ -919,8 +840,6 @@ useEffect(() => {
                   ))}
                 </div>
               </div>
-              
-              {/* Leave group button */}
               <div className="mt-6 flex justify-center">
                 <button className="text-red-500 font-medium py-2 px-4 rounded-lg hover:bg-red-50">
                   Rời khỏi nhóm
@@ -974,8 +893,7 @@ useEffect(() => {
               className="text-gray-500 hover:text-black text-2xl font-bold"
               title="Đóng chat"
             >
-              ×
-            </button>
+              ×/×</button>
           </div>
 
           {/* Message List */}
@@ -1043,9 +961,7 @@ useEffect(() => {
           </div>
         </div>
       )}
-      
-    <ToastContainer position="top-right" />
-
+      <ToastContainer position="top-right" />
     </div>
   );
 }

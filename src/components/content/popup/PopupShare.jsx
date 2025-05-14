@@ -4,6 +4,29 @@ import axios from 'axios';
 
 function PopupShare({ post, onClose, currentUserId, onShareSuccess }) {
     // Hàm gọi API chia sẻ bài viết
+
+
+    const sendNotification = async (message) => {
+        if (currentUserId === post.user.id) {
+            return;
+        }
+        try {
+            await axios.post('http://localhost:8080/notifications/post-action', null, {
+                params: {
+                    postId: post.id,
+                    userId: post.user.id, // người nhận là chủ bài viết
+                    currentUserId: currentUserId, // người chia sẻ
+                    message: message,
+                    type: 'SHARE'
+                }
+            });
+            console.log('Thông báo chia sẻ đã được gửi');
+        } catch (error) {
+            console.error('Lỗi gửi thông báo chia sẻ:', error);
+        }
+    };
+
+
     const createPostShare = async (postId, userId) => {
         try {
             const response = await axios.post('http://localhost:8080/shares', null, {
@@ -22,14 +45,16 @@ function PopupShare({ post, onClose, currentUserId, onShareSuccess }) {
     const handleShare = async () => {
         try {
             await createPostShare(post.id, currentUserId);
-            window.location.reload()
-            onShareSuccess(); // gọi callback để cập nhật số chia sẻ
+            await sendNotification('đã chia sẻ bài viết của bạn');
+            window.location.reload();
+            onShareSuccess();
             alert("Đã chia sẻ bài viết!");
             onClose();
         } catch (err) {
             alert(err);
         }
     };
+
 
     return (
         <div className="popup-overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

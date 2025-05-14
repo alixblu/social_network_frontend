@@ -6,10 +6,9 @@ function PopupComments({ currentId, postId, onClose, updateCommentCount }) {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
 
-
-
-
     const commentsEndRef = useRef(null);
+    
+    // Scroll to bottom when new comments are added
     useEffect(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [comments]);
@@ -25,7 +24,7 @@ function PopupComments({ currentId, postId, onClose, updateCommentCount }) {
         };
         fetchComments();
 
-        // Khóa cuộn trang khi popup mở
+        // Lock body scroll when popup is open
         document.body.style.overflow = 'hidden';
         return () => {
             document.body.style.overflow = 'auto';
@@ -34,7 +33,9 @@ function PopupComments({ currentId, postId, onClose, updateCommentCount }) {
 
     const createComment = async () => {
         if (!newComment.trim()) return;
+
         try {
+            // Gửi comment
             const res = await axios.post('http://localhost:8080/comments/create', null, {
                 params: {
                     userId: currentId,
@@ -43,11 +44,34 @@ function PopupComments({ currentId, postId, onClose, updateCommentCount }) {
                 }
             });
 
-            await updateCommentCount();  // Gọi hàm callback từ PostItem
+            await updateCommentCount(); // Cập nhật số lượng comment
             setComments(prev => [...prev, res.data]);
             setNewComment('');
+
+            // Lấy thông tin bài viết để xác định chủ bài viết
+            const postRes = await axios.get(`http://localhost:8080/posts/${postId}`);
+            const postOwnerId = postRes.data.user.id;
+            console.log("ID Của thăng đăng bài")
+            console.log(postOwnerId)
+            // Kiểm tra nếu bài viết không phải của mình thì gửi notification
+            if (postOwnerId !== currentId) {
+                await axios.post('http://localhost:8080/notifications/post-action', null, {
+                    params: {
+                        currentUserId : currentId,
+                        userId: postOwnerId,
+                        postId,
+                        message: `đã bình luận vào bài viết của bạn.`,
+                        type: 'COMMENT'
+                    }
+                });
+            }
+
         } catch (err) {
-            console.error("Lỗi khi gửi comment:", err);
+            if (err.response?.status === 409) {
+                console.log("Notification đã tồn tại, không cần gửi lại.");
+            } else {
+                console.error("Lỗi khi gửi comment hoặc notification:", err);
+            }
         }
     };
 
@@ -95,4 +119,4 @@ function PopupComments({ currentId, postId, onClose, updateCommentCount }) {
     );
 }
 
-export default PopupComments
+export default PopupComments;

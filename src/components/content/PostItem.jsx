@@ -71,6 +71,31 @@ function PostItem({ post, currentId, onDeleteSuccess, type, exit }) {
             .catch(err => console.error("Lỗi lấy reactions:", err));
     }, [post.id, currentId]);
 
+
+    const sendNotification = async (message) => {
+        if (currentId === post.user.id) {
+            return;
+        }
+        try {
+            const response = await axios.post('http://localhost:8080/notifications/post-action', null, {
+                params: {
+                    postId: post.id,
+                    message: message,
+                    userId: post.user.id,
+                    currentUserId: currentId,
+                    type: 'REACTION'
+                }
+            });
+            console.log('Thông báo đã được gửi:', response.data);
+        } catch (error) {
+            console.error('Lỗi gửi thông báo:', error);
+        }
+    };
+
+
+
+
+
     const handleReaction = async (type) => {
         if (isReacting) return;
         setIsReacting(true);
@@ -112,6 +137,8 @@ function PostItem({ post, currentId, onDeleteSuccess, type, exit }) {
                 });
 
                 setReactionType(type); // Cập nhật lại reactionType với loại mới
+                sendNotification(`đã thả cảm xúc ${REACTIONS.find(r => r.type === type)?.label} bài viết của bạn`);
+            
             }
         } catch (err) {
             console.error("Lỗi gửi reaction:", err);

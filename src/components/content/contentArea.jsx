@@ -9,7 +9,7 @@ import {
     Send
 } from "@mui/icons-material";
 import axios from "axios";
-import SharePostItem from './SharePostItem';
+import SharePostItem from '../content/SharePostItem';
 import PostItem from '../content/PostItem';
 
 
