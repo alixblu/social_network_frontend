@@ -120,7 +120,7 @@ function Admin() {
   };
   
   const checkAdmin = () =>{
-    const token = JSON.parse(sessionStorage.getItem("token"));
+    const token = sessionStorage.getItem("token");
     if(token==null){
       BackToLogin()
     }
@@ -132,7 +132,7 @@ function Admin() {
         .then(response => {
           if(!response.data.isAdmin){
             BackToHome()
-          }
+            }
         })
         .catch(error => {
           console.error("Lỗi lấy thông tin user:", error);
