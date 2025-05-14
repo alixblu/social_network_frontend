@@ -102,33 +102,44 @@ function Header() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [messList, setMessList] = useState([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const token = sessionStorage.getItem('token');
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
         const userId = sessionStorage.getItem('userId');
-        if (!userId) return;
+        if (!userId || !token) return;
         setIsLoadingConversations(true);
-        const response = await axios.get(`http://localhost:8080/chat/messages/conversations/${userId}`);
-        const transformedData = response.data.map(conversation => ({
-          id: conversation.partner.id,
-          Avatar: conversation.partner.avatarUrl || "4.jpg",
-          Name: conversation.partner.username,
-          Content: conversation.message.content,
-          chatRoomId: conversation.message.chatRoomId
-        }));
+        const response = await axios.get(`http://localhost:8080/chat/messages/conversations/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('Conversations response:', response.data);
+        
+        const transformedData = response.data.map(conversation => {
+          if (!conversation.partner || !conversation.message) {
+            console.warn('Invalid conversation data:', conversation);
+            return null;
+          }
+          return {
+            id: conversation.partner.id,
+            Avatar: conversation.partner.avatarUrl || "default-avatar.png",
+            Name: conversation.partner.username,
+            Content: conversation.message.content,
+            chatRoomId: conversation.message.chatRoomId
+          };
+        }).filter(Boolean); // Remove any null entries
+        
         setMessList(transformedData);
       } catch (error) {
         console.error("Error fetching conversations:", error);
-        setMessList([
-          { Avatar: "4.jpg", Name: "Error loading", Content: "Please try again later" }
-        ]);
+        setMessList([]);
       } finally {
         setIsLoadingConversations(false);
       }
     };
     fetchConversations();
-  }, [activePopup]);
+  }, [activePopup, token]);
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [activeMessTab, setActiveMessTab] = useState("inbox");
@@ -168,8 +179,13 @@ function Header() {
       }
     })
     .then(response => {
-      setUser(response.data);
-      setAdmin(response.data.isAdmin);
+      if (response.data) {
+        setUser(response.data);
+        setAdmin(response.data.isAdmin || false);
+      } else {
+        console.error("No user data received");
+        BackToLogin();
+      }
     })
     .catch(error => {
       console.error("Lỗi lấy thông tin user trong Header:", error);
@@ -262,8 +278,11 @@ function Header() {
         <img
           onClick={() => togglePopup("acc")}
           title="Tài khoản"
-          src={`http://localhost:8080/images/${user.avatarUrl}`}
+          src={user?.avatarUrl ? `http://localhost:8080/images/${user.avatarUrl}` : 'http://localhost:8080/images/default-avatar.png'}
           alt="Avatar"
+          onError={(e) => {
+            e.target.src = 'http://localhost:8080/images/default-avatar.png';
+          }}
         />
       </div>
 

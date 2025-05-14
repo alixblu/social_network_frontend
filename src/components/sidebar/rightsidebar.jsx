@@ -3,6 +3,7 @@ import { Search, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import MessengerChatBox from '../ui/chatbox.jsx';
+import UserChatBox from '../ui/UserChatBox';
 import './RightSidebar.css';
 
 const RightSidebar = () => {
@@ -15,6 +16,7 @@ const RightSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const currentUserId = sessionStorage.getItem('userId');
   const token = sessionStorage.getItem('token');
@@ -68,7 +70,7 @@ const RightSidebar = () => {
         setFriends(
           Array.isArray(friendsData)
             ? friendsData.map((f) => ({
-                id: f.id || 0,
+                id: f.user1?.id === parseInt(currentUserId) ? f.user2?.id : f.user1?.id,
                 username:
                   f.user1?.id === parseInt(currentUserId)
                     ? f.user2?.username || 'Unknown'
@@ -77,6 +79,8 @@ const RightSidebar = () => {
                   f.user1?.id === parseInt(currentUserId) ? f.user2?.avatarUrl : f.user1?.avatarUrl
                 ),
                 isOnline: Math.random() > 0.5, // Giả lập trạng thái online
+                user1: f.user1,
+                user2: f.user2
               }))
             : []
         );
@@ -110,7 +114,7 @@ const RightSidebar = () => {
       setFriends(
         Array.isArray(friendsRes.data)
           ? friendsRes.data.map((f) => ({
-              id: f.id || 0,
+              id: f.user1?.id === parseInt(currentUserId) ? f.user2?.id : f.user1?.id,
               username:
                 f.user1?.id === parseInt(currentUserId)
                   ? f.user2?.username || 'Unknown'
@@ -119,6 +123,8 @@ const RightSidebar = () => {
                 f.user1?.id === parseInt(currentUserId) ? f.user2?.avatarUrl : f.user1?.avatarUrl
               ),
               isOnline: Math.random() > 0.5,
+              user1: f.user1,
+              user2: f.user2
             }))
           : []
       );
@@ -140,13 +146,88 @@ const RightSidebar = () => {
     }
   };
 
-  const handleChatBox = (friend) => {
-    if (friend) {
-      setOpenMess(!isOpenMess);
-      setUser({
-        Name: friend.username,
-        Avatar: friend.avatarUrl, // Đã được xử lý bởi getAvatarUrl
+  const handleChatBox = async (friend) => {
+    try {
+      console.log('Opening chat with friend:', friend);
+      const userId1 = parseInt(sessionStorage.getItem('userId'));
+      // Get the friend's user ID from the friendship data
+      const userId2 = friend.user1?.id === userId1 ? friend.user2?.id : friend.user1?.id;
+      
+      if (!userId2) {
+        console.error('Could not determine friend user ID');
+        setError('Invalid friend data');
+        return;
+      }
+      
+      // Prevent self-chatting
+      if (userId1 === userId2) {
+        setError('Cannot start chat with yourself');
+        return;
+      }
+      
+      console.log('Requesting chat room with users:', { userId1, userId2 });
+      
+      // First check friendship status
+      const friendshipResponse = await axios.get('http://localhost:8080/friendships/between', {
+        params: {
+          userId1,
+          userId2
+        },
+        headers: { Authorization: `Bearer ${token}` }
       });
+      
+      console.log('Friendship status:', friendshipResponse.data);
+      
+      if (!friendshipResponse.data || friendshipResponse.data.status !== 'ACCEPTED') {
+        throw new Error('Friendship not accepted');
+      }
+      
+      // Get or create chat room
+      const response = await axios.get('http://localhost:8080/chat/rooms/find', {
+        params: {
+          userId1,
+          userId2
+        },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Chat room response:', response.data);
+      
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+      
+      if (response.data.message === 'friendship not available') {
+        throw new Error('Friendship not available for chatting');
+      }
+      
+      if (!response.data.id) {
+        throw new Error('Invalid chat room response: missing room ID');
+      }
+      
+      setSelectedUser({
+        ...friend,
+        id: userId2, // Set the correct user ID
+        chatRoomId: response.data.id
+      });
+    } catch (error) {
+      console.error('Error creating chat room:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // Show more specific error message to user
+      if (error.message === 'Friendship not accepted') {
+        setError('Cannot start chat: Friendship not accepted');
+      } else if (error.response?.data?.message === 'friendship not available') {
+        setError('Cannot start chat: Friendship not available');
+      } else if (error.response?.status === 404) {
+        setError('Cannot start chat: Friendship not found');
+      } else {
+        setError('Failed to open chat. Please try again.');
+      }
     }
   };
 
@@ -296,8 +377,13 @@ const RightSidebar = () => {
         </div>
       </div>
 
-      {isOpenMess && user && (
-        <MessengerChatBox user={user} onClose={() => setOpenMess(false)} />
+      {selectedUser && (
+        <div className="fixed top-[60px] right-[20px] z-50">
+          <UserChatBox 
+            user={selectedUser} 
+            onClose={() => setSelectedUser(null)} 
+          />
+        </div>
       )}
     </div>
   );
