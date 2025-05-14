@@ -1,12 +1,12 @@
-import { Clear, ModeComment, Recommend } from "@mui/icons-material";
+import { Clear, ModeComment, MoreHoriz, Recommend } from "@mui/icons-material";
 import axios from "axios";
 import { Send } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PopupComments from "./popup/PopupComments";
 import PopupShare from "./popup/PopupShare";
 import PopupDeletePost from "./popup/PopupDetelePost";
+import PopupReport from "./popup/PopupReport";
 
-// Các loại reaction có thể mở rộng
 const REACTIONS = [
     { type: "LIKE", label: "👍" },
     { type: "LOVE", label: "❤️" },
@@ -17,128 +17,117 @@ const REACTIONS = [
 
 function PostItem({ post, currentId, onDeleteSuccess, type, exit }) {
     const postUser = post.user;
-    const [showComments, setShowComments] = useState(false);
-    const [commentCount, setCommentCount] = useState(0);
-    const [reactionCount, setReactionCount] = useState({
-        LIKE: 0,
-        LOVE: 0,
-        HAHA: 0,
-        SAD: 0,
-        ANGRY: 0,
-    });
+    const mediaUrls = post.mediaUrls || [];
+    const images = mediaUrls.filter(url => /\.(jpeg|jpg|png|gif)$/i.test(url));
+    const videos = mediaUrls.filter(url => /\.mp4$/i.test(url));
+    const audios = mediaUrls.filter(url => /\.mp3$/i.test(url));
+
+    const [reactionCount, setReactionCount] = useState({});
     const [reactionType, setReactionType] = useState(null);
     const [isReacting, setIsReacting] = useState(false);
     const [showReactionMenu, setShowReactionMenu] = useState(false);
+    const [commentCount, setCommentCount] = useState(0);
     const [shareCount, setShareCount] = useState(0);
+    const [showComments, setShowComments] = useState(false);
     const [showSharePopup, setShowSharePopup] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
+    const [showReportPopup, setShowReportPopup] = useState(false);
 
-    const mediaUrls = post.mediaUrls || [];
-    const images = mediaUrls.filter(url => url.match(/\.(jpeg|jpg|png|gif)$/i));
-    const videos = mediaUrls.filter(url => url.match(/\.mp4$/i));
-    const audios = mediaUrls.filter(url => url.match(/\.mp3$/i));
+
+
+
+
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    // Đóng menu khi click ra ngoài
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+
 
     useEffect(() => {
         axios.get(`http://localhost:8080/comments/post/${post.id}`)
-            .then(response => setCommentCount(response.data?.length || 0))
-            .catch(error => console.error("Lỗi lấy số lượng bình luận:", error));
+            .then(res => setCommentCount(res.data?.length || 0))
+            .catch(console.error);
     }, [post.id]);
 
     useEffect(() => {
         axios.get(`http://localhost:8080/likes/post/${post.id}`)
-            .then(response => {
-                const likes = response.data || [];
-                const counts = {
-                    LIKE: 0,
-                    LOVE: 0,
-                    HAHA: 0,
-                    SAD: 0,
-                    ANGRY: 0,
-                };
-
-                // Đếm số lượng reactions cho mỗi loại
-                likes.forEach(like => {
-                    if (counts[like.reactionType] !== undefined) {
+            .then(res => {
+                const counts = REACTIONS.reduce((acc, r) => ({ ...acc, [r.type]: 0 }), {});
+                res.data?.forEach(like => {
+                    if (counts.hasOwnProperty(like.reactionType)) {
                         counts[like.reactionType]++;
                     }
                     if (like.user.id === currentId) {
                         setReactionType(like.reactionType);
                     }
                 });
-
                 setReactionCount(counts);
             })
-            .catch(err => console.error("Lỗi lấy reactions:", err));
+            .catch(console.error);
     }, [post.id, currentId]);
 
+    useEffect(() => {
+        axios.get(`http://localhost:8080/shares/post/${post.id}`)
+            .then(res => setShareCount(res.data.length))
+            .catch(console.error);
+    }, [post.id]);
 
     const sendNotification = async (message) => {
-        if (currentId === post.user.id) {
-            return;
-        }
+        if (currentId === post.user.id) return;
         try {
-            const response = await axios.post('http://localhost:8080/notifications/post-action', null, {
+            await axios.post('http://localhost:8080/notifications/post-action', null, {
                 params: {
                     postId: post.id,
-                    message: message,
+                    message,
                     userId: post.user.id,
                     currentUserId: currentId,
                     type: 'REACTION'
                 }
             });
-            console.log('Thông báo đã được gửi:', response.data);
-        } catch (error) {
-            console.error('Lỗi gửi thông báo:', error);
+        } catch (err) {
+            console.error('Lỗi gửi thông báo:', err);
         }
     };
-
-
-
-
 
     const handleReaction = async (type) => {
         if (isReacting) return;
         setIsReacting(true);
         try {
             if (reactionType === type) {
-                // Nếu nhấn lại cùng loại reaction => gỡ bỏ
                 await axios.delete("http://localhost:8080/likes", {
                     params: { postId: post.id, userId: currentId, reactionType: type }
                 });
-                setReactionType(null); // Đặt lại reactionType thành null
-                setReactionCount(prev => {
-                    const newCount = { ...prev };
-                    newCount[type] = Math.max(newCount[type] - 1, 0); // Giảm số lượng reaction
-                    return newCount;
-                });
+                setReactionType(null);
+                setReactionCount(prev => ({ ...prev, [type]: Math.max(prev[type] - 1, 0) }));
             } else {
-                // Nếu đã có reaction khác => xóa cái cũ trước
                 if (reactionType) {
                     await axios.delete("http://localhost:8080/likes", {
-                        params: { postId: post.id, userId: currentId, reactionType: reactionType }
+                        params: { postId: post.id, userId: currentId, reactionType }
                     });
-                    setReactionCount(prev => {
-                        const newCount = { ...prev };
-                        newCount[reactionType] = Math.max(newCount[reactionType] - 1, 0); // Giảm số lượng reaction loại cũ
-                        return newCount;
-                    });
+                    setReactionCount(prev => ({
+                        ...prev,
+                        [reactionType]: Math.max(prev[reactionType] - 1, 0)
+                    }));
                 }
-
-                // Sau đó thêm mới reaction
                 await axios.post("http://localhost:8080/likes", null, {
                     params: { postId: post.id, userId: currentId, reactionType: type }
                 });
-
-                // Cập nhật số lượng reactions cho reaction mới
-                setReactionCount(prev => {
-                    const newCount = { ...prev };
-                    newCount[type] = (newCount[type] || 0) + 1; // Tăng số lượng reaction cho loại mới
-                    return newCount;
-                });
-
-                setReactionType(type); // Cập nhật lại reactionType với loại mới
+                setReactionType(type);
+                setReactionCount(prev => ({ ...prev, [type]: (prev[type] || 0) + 1 }));
                 sendNotification(`đã thả cảm xúc ${REACTIONS.find(r => r.type === type)?.label} bài viết của bạn`);
-            
             }
         } catch (err) {
             console.error("Lỗi gửi reaction:", err);
@@ -157,117 +146,140 @@ function PostItem({ post, currentId, onDeleteSuccess, type, exit }) {
         }
     };
 
-    useEffect(() => {
-        axios.get(`http://localhost:8080/shares/post/${post.id}`)
-            .then(res => setShareCount(res.data.length))
-            .catch(err => console.error("Lỗi lấy số lượt chia sẻ:", err));
-    }, [post.id]);
-
-    const currentReactionLabel = REACTIONS.find(r => r.type === reactionType)?.label || "Thích";
-
     return (
-        <div key={post.id} style={{ backgroundColor: 'white', borderRadius: '10px', marginBottom: '20px' }}>
-            <div className="post-info">
-                <div className="info-container">
-                    <img src={`http://localhost:8080/images/${postUser.avatarUrl}`} className="info-compoment-image" alt="User" />
-                    <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px' }}>
-                        <span className="font-semibold">{postUser.username}</span>
-                        <span className='text-[14px] text-gray-500'>{new Date(post.time).toLocaleString()}</span>
+        <div key={post.id} className="bg-white rounded-[10px] mb-5 p-4 shadow-sm">
+            <div className="post-info flex justify-between items-start">
+                <div className="info-container flex">
+                    <img
+                        src={`http://localhost:8080/images/${postUser.avatarUrl}`}
+                        className="w-12 h-12 rounded-full object-cover"
+                        alt="User"
+                    />
+                    <div className="ml-3">
+                        <p className="font-semibold">{postUser.username}</p>
+                        <p className="text-sm text-gray-500">{new Date(post.time).toLocaleString()}</p>
                     </div>
                 </div>
-                {exit !== "NO" && (
-                    <div onClick={() => setShowDeletePopup(true)} className="info-compoment-delete cursor-pointer">
-                        <Clear />
+               {/* {exit !== "NO" && ( */}
+                   <div className="relative" ref={menuRef}>
+                        <div
+                            className="cursor-pointer p-1 hover:bg-gray-200 rounded-full"
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        >
+                            <MoreHoriz />
+                        </div>
+
+                        {isMenuOpen && (
+                            <div className="absolute right-0 mt-1 bg-white border rounded shadow-md z-50 min-w-[120px]">
+                                {exit !== "NO" && (
+                                    <button
+                                        onClick={() => {
+                                         setIsMenuOpen(false);
+                                         setShowDeletePopup(true);
+                                        }}
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+                                    >
+                                        Xóa bài viết
+                                    </button>
+                                )}
+                                
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        setShowReportPopup(true);
+                                    }}
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+                                >
+                                    Báo cáo
+                                </button>
+                            </div>
+                        )}
                     </div>
-                )}
+                {/* )} */}
+
             </div>
 
-            <div className='post-content'>{post.content}</div>
+            <div className="mt-3">{post.content}</div>
 
-            <div className="media-container">
+            <div className="media-container my-3">
                 {audios.length > 0 && (
-                    <audio key="audio" controls className="audio-player mb-2">
+                    <audio controls className="w-full mb-2">
                         <source src={audios[0]} type="audio/mpeg" />
                     </audio>
                 )}
                 {(images.length > 0 || videos.length > 0) && (
-                    <div className="media-row">
-                        {images.length === 1 && videos.length === 1 && (
-                            <div className='flex'>
-                                <img src={images[0]} alt="media-img" className="media-half" />
-                                <video controls className="media-half">
-                                    <source src={videos[0]} type="video/mp4" />
-                                </video>
-                            </div>
-                        )}
-                        {images.length === 1 && videos.length === 0 && (
-                            <img src={images[0]} alt="media-img" className="media-full" />
-                        )}
-                        {videos.length === 1 && images.length === 0 && (
-                            <video controls className="media-full">
+                    <div className="flex gap-2">
+                        {images.length === 1 && <img src={images[0]} alt="media" className="w-full rounded-md" />}
+                        {videos.length === 1 && (
+                            <video controls className="w-full rounded-md">
                                 <source src={videos[0]} type="video/mp4" />
                             </video>
+                        )}
+                        {images.length === 1 && videos.length === 1 && (
+                            <>
+                                <img src={images[0]} alt="media-img" className="w-1/2 rounded-md" />
+                                <video controls className="w-1/2 rounded-md">
+                                    <source src={videos[0]} type="video/mp4" />
+                                </video>
+                            </>
                         )}
                     </div>
                 )}
             </div>
 
-            <div>
-                <div className="flex justify-between items-center px-4 py-2 border-b border-gray-300">
-                    <div className="flex items-center">
-                        {REACTIONS.map((reaction) => (
-                            <div key={reaction.type} className="flex items-center mr-3">
-                                <span className="text-xl">{reaction.label}</span>
-                                <span className="ml-1 text-sm">{reactionCount[reaction.type] || 0}</span> {/* Hiển thị số lượng reaction */}
-                            </div>
-                        ))}
-                    </div>
-                    <div>
-                        <span className="text-gray-500 text-sm mr-2">{commentCount} Bình luận</span>
-                        <span className="text-gray-500 text-sm">{shareCount} Chia sẻ</span>
-                    </div>
-                </div>
-
-                <div className="flex justify-around my-2 pb-2 relative">
-                    <div
-                        className={`relative ${showReactionMenu ? "text-blue-600 bg-gray-200" : "text-gray-800 hover:text-blue-600 hover:bg-gray-200"}`}
-                        onMouseEnter={() => setShowReactionMenu(true)}
-                        onMouseLeave={() => setShowReactionMenu(false)}
-                    >
-                        {/* Nút Reaction */}
-                        <div className="flex items-center gap-1 cursor-pointer px-6 py-2 rounded-lg transition duration-200">
-                            {reactionType ? (
-                                <span className="text-xl">{REACTIONS.find(r => r.type === reactionType)?.label}</span>
-                            ) : (
-                                <Recommend className="text-gray-500" />
-                            )}
+            <div className="flex justify-between items-center text-sm text-gray-600 border-t border-b py-2">
+                <div className="flex gap-3">
+                    {REACTIONS.map(({ type, label }) => (
+                        <div key={type} className="flex items-center gap-1">
+                            <span>{label}</span>
+                            <span>{reactionCount[type] || 0}</span>
                         </div>
+                    ))}
+                </div>
+                <div>
+                    <span className="mr-3">{commentCount} Bình luận</span>
+                    <span>{shareCount} Chia sẻ</span>
+                </div>
+            </div>
 
-                        {/* Menu reactions */}
-                        {showReactionMenu && (
-                            <div className="absolute bottom-full left-0 bg-white border rounded shadow-md px-2 py-1 flex gap-2 z-50">
-                                {REACTIONS.map(r => (
-                                    <span
-                                        key={r.type}
-                                        className="cursor-pointer text-xl hover:scale-125 transition-transform"
-                                        onClick={() => handleReaction(r.type)}
-                                    >
-                                        {r.label}
-                                    </span>
-                                ))}
-                            </div>
+            <div className="flex justify-around pt-2 relative">
+                {/* Reaction button */}
+                <div
+                    className={`relative ${showReactionMenu ? "text-blue-600 bg-gray-200" : "hover:text-blue-600 hover:bg-gray-200"} px-4 py-2 rounded-lg transition`}
+                    onMouseEnter={() => setShowReactionMenu(true)}
+                    onMouseLeave={() => setShowReactionMenu(false)}
+                >
+                    <div className="flex items-center gap-1 cursor-pointer">
+                        {reactionType ? (
+                            <span className="text-xl">{REACTIONS.find(r => r.type === reactionType)?.label}</span>
+                        ) : (
+                            <Recommend className="text-gray-500" />
                         )}
                     </div>
 
-                    <div onClick={() => setShowComments(!showComments)} className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition duration-200">
-                        <ModeComment className='text-gray-500' />
-                        <span>Bình luận</span>
-                    </div>
+                    {showReactionMenu && (
+                        <div className="absolute bottom-full left-0 bg-white border rounded shadow px-2 py-1 flex gap-2 z-50">
+                            {REACTIONS.map(({ type, label }) => (
+                                <span
+                                    key={type}
+                                    className="cursor-pointer text-xl hover:scale-125 transition-transform"
+                                    onClick={() => handleReaction(type)}
+                                >
+                                    {label}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
-                    <div onClick={() => setShowSharePopup(true)} className="flex items-center gap-1 cursor-pointer text-gray-800 hover:text-blue-600 hover:bg-gray-200 px-6 py-2 rounded-lg transition duration-200">
-                        <Send className='text-gray-500' />
-                        <span>Chia sẻ</span>
-                    </div>
+                <div onClick={() => setShowComments(true)} className="flex items-center gap-1 cursor-pointer hover:text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition">
+                    <ModeComment className="text-gray-500" />
+                    <span>Bình luận</span>
+                </div>
+
+                <div onClick={() => setShowSharePopup(true)} className="flex items-center gap-1 cursor-pointer hover:text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition">
+                    <Send className="text-gray-500" />
+                    <span>Chia sẻ</span>
                 </div>
             </div>
 
@@ -296,6 +308,13 @@ function PostItem({ post, currentId, onDeleteSuccess, type, exit }) {
                     onClose={() => setShowDeletePopup(false)}
                     onDeleteSuccess={onDeleteSuccess}
                     type={type}
+                />
+            )}
+            {showReportPopup && (
+                <PopupReport
+                    currentId={currentId}
+                    post={post}
+                    onClose={() => setShowReportPopup(false)}
                 />
             )}
         </div>
