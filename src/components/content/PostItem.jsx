@@ -90,7 +90,7 @@ function PostItem({ post, currentId, onDeleteSuccess, type, exit }) {
                 // Nếu đã có reaction khác => xóa cái cũ trước
                 if (reactionType) {
                     await axios.delete("http://localhost:8080/likes", {
-                        params: { postId: post.id, userId: currentId }
+                        params: { postId: post.id, userId: currentId, reactionType: reactionType }
                     });
                     setReactionCount(prev => {
                         const newCount = { ...prev };
