@@ -107,7 +107,9 @@ const Login = () => {
 
           {errors.root && <p className="text-red-500 text-sm text-center mt-3">{errors.root.message}</p>}
 
-          <p className="text-blue-600 text-sm text-center mt-3 cursor-pointer hover:underline">
+          <p className="text-blue-600 text-sm text-center mt-3 cursor-pointer hover:underline"
+            onClick={() => navigate("/changepass")}
+          >
             Quên mật khẩu?
           </p>
 
