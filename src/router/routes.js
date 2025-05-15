@@ -5,6 +5,7 @@ import FriendsPage from '../pages/user/FriendsPage'
 import content from "../components/content/contentArea";
 import Login from '../pages/auth/login'
 import Register from '../pages/auth/register'
+import ChangePass from '../pages/auth/changePassword'
 import Admin from '../pages/admin/admin'
 
 const PublicRoutes = [
@@ -15,6 +16,7 @@ const PublicRoutes = [
     {path: config.routes.login, component: Login },
     {path: config.routes.register, component: Register },
     {path: config.routes.admin, component: Admin },
+    {path: config.routes.changePassword, component: ChangePass },
 ];
 
 export default PublicRoutes;
