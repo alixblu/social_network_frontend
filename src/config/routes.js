@@ -4,7 +4,7 @@ const routes = {
     friends: "/friends",    
     login: "/login",
     register: "/register",
-    admin : "/admin",
+    admin : "/Admin",
     test:"/test"
   };
   

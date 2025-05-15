@@ -122,11 +122,11 @@ function Header() {
             return null;
           }
           return {
-            id: conversation.partner.id,
+          id: conversation.partner.id,
             Avatar: conversation.partner.avatarUrl || "default-avatar.png",
-            Name: conversation.partner.username,
-            Content: conversation.message.content,
-            chatRoomId: conversation.message.chatRoomId
+          Name: conversation.partner.username,
+          Content: conversation.message.content,
+          chatRoomId: conversation.message.chatRoomId
           };
         }).filter(Boolean); // Remove any null entries
         
@@ -180,7 +180,7 @@ function Header() {
     })
     .then(response => {
       if (response.data) {
-        setUser(response.data);
+      setUser(response.data);
         setAdmin(response.data.isAdmin || false);
       } else {
         console.error("No user data received");

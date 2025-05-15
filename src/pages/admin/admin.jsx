@@ -3,13 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios" 
-
-
-
-
-
-
-
+import { FaFlag, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export function FormUser({ user, onClose, onToggleStatus }) {
   if (!user) return null;
@@ -61,11 +55,6 @@ export function FormUser({ user, onClose, onToggleStatus }) {
   );
 }
 
-
-
-
-
-
 function Admin() {
   const [activeTab, setActiveTab] = useState('posts');
   const [searchPost, setSearchPost] = useState('');
@@ -73,25 +62,17 @@ function Admin() {
   const [isOpenInfo, setOpenInfo] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const posts = [
-    { id: 1, title: 'Bài viết React', content: 'Giới thiệu ReactJS' },
-    { id: 2, title: 'Bài viết Vue', content: 'Nội dung VueJS cơ bản' },
-    { id: 3, title: 'Bài viết Angular', content: 'Khái niệm Angular' },
-  ];
+  const [reportedPosts, setReportedPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-
-  // Lọc dữ liệu theo thanh tìm kiếm
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchPost.toLowerCase())
+  const filteredPosts = reportedPosts.filter(post =>
+    post.content.toLowerCase().includes(searchPost.toLowerCase())
   );
 
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchUser.toLowerCase())
   );
   
-
- 
-
   const navigate = useNavigate()
   const BackToHome = () => navigate("/home")
   const BackToLogin = () => navigate("/login")
@@ -145,7 +126,70 @@ function Admin() {
     fetchUsers(); // chỉ fetch 1 lần
   }, []);
 
-  
+  useEffect(() => {
+    fetchReportedPosts();
+  }, []);
+
+  const fetchReportedPosts = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/posts/reported');
+      setReportedPosts(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching reported posts:', error);
+      toast.error("Không thể lấy dữ liệu bài viết bị báo cáo!");
+      setLoading(false);
+    }
+  };
+
+  const handleHidePost = async (postId) => {
+    try {
+      const response = await axios.put(`http://localhost:8080/posts/${postId}/hide`, {}, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.status === 200) {
+        toast.success("Ẩn bài viết thành công!");
+        fetchReportedPosts();
+      } else {
+        toast.error("Không thể ẩn bài viết!");
+      }
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      if (error.response) {
+        toast.error(error.response.data.message || "Không thể ẩn bài viết!");
+      } else {
+        toast.error("Không thể ẩn bài viết!");
+      }
+    }
+  };
+
+  const handleUnhidePost = async (postId) => {
+    try {
+      const response = await axios.put(`http://localhost:8080/posts/${postId}/unhide`, {}, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.status === 200) {
+        toast.success("Hiện bài viết thành công!");
+        fetchReportedPosts();
+      } else {
+        toast.error("Không thể hiện bài viết!");
+      }
+    } catch (error) {
+      console.error('Error unhiding post:', error);
+      if (error.response) {
+        toast.error(error.response.data.message || "Không thể hiện bài viết!");
+      } else {
+        toast.error("Không thể hiện bài viết!");
+      }
+    }
+  };
+
   const handleToggleStatus = (id) => {
     const currentStatus = selectedUser?.status;
     const newStatus = currentStatus === "ACTIVE" ? "BANNED" : "ACTIVE";
@@ -160,9 +204,13 @@ function Admin() {
       .catch(() => toast.error("Thao tác thất bại!"));
   };
   
- 
-  
-
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -226,12 +274,84 @@ function Admin() {
       {activeTab === 'posts' && (
         <div className="space-y-4">
           {filteredPosts.map(post => (
-            <div key={post.id} className="p-4 border rounded-md shadow-sm">
-              <h3 className="font-bold">{post.title}</h3>
-              <p>{post.content}</p>
+            <div key={post.id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={post.avatarUrl || 'default-avatar.png'}
+                    alt={post.username}
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div>
+                    <h3 className="font-semibold">{post.username}</h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(post.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="flex items-center text-red-500">
+                    <FaFlag className="mr-1" />
+                    {post.reports?.length || 0} báo cáo
+                  </span>
+                  {post.hidden ? (
+                    <button
+                      onClick={() => handleUnhidePost(post.id)}
+                      className="flex items-center text-green-600 hover:text-green-700"
+                    >
+                      <FaEye className="mr-1" />
+                      Hiện bài viết
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleHidePost(post.id)}
+                      className="flex items-center text-red-600 hover:text-red-700"
+                    >
+                      <FaEyeSlash className="mr-1" />
+                      Ẩn bài viết
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-gray-800">{post.content}</p>
+              </div>
+
+              {post.mediaUrls && post.mediaUrls.length > 0 && (
+                <div className="mb-4">
+                  {post.mediaUrls.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`Media ${index + 1}`}
+                      className="max-w-full h-auto rounded-lg mb-2"
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Danh sách báo cáo:</h4>
+                <div className="space-y-2">
+                  {post.reports?.map((report) => (
+                    <div key={report.id} className="bg-gray-50 p-3 rounded">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">{report.username}</p>
+                          <p className="text-sm text-gray-600">{report.reason}</p>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {new Date(report.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           ))}
-          {filteredPosts.length === 0 && <p className="text-gray-500">Không tìm thấy bài viết nào.</p>}
+          {filteredPosts.length === 0 && <p className="text-gray-500">Không có bài viết nào bị báo cáo.</p>}
         </div>
       )}
 
@@ -247,24 +367,22 @@ function Admin() {
           </thead>
           <tbody>
             {filteredUsers.map(user => (
-              <tr onClick={ () => PopupInformation(user)} className=' hover:bg-blue-200' key={user.id}>
+              <tr onClick={() => PopupInformation(user)} className='hover:bg-blue-200' key={user.id}>
                 <td className="border p-2 text-center">{user.id}</td>
                 <td className="border p-2 text-center">{user.username}</td>
-                <td className="border p-2 text-center" >{user.email}</td>
-                <td className= {user.status==="ACTIVE" ? "border p-2 text-green-600 font-semibold text-center" : "border p-2 text-red-500 font-semibold text-center" }>{user.status}</td>
+                <td className="border p-2 text-center">{user.email}</td>
+                <td className={user.status === "ACTIVE" ? "border p-2 text-green-600 font-semibold text-center" : "border p-2 text-red-500 font-semibold text-center"}>{user.status}</td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
 
-      {isOpenInfo && selectedUser &&(
-        <FormUser user={selectedUser} onClose={() => setOpenInfo(false)} onToggleStatus={handleToggleStatus}  />
+      {isOpenInfo && selectedUser && (
+        <FormUser user={selectedUser} onClose={() => setOpenInfo(false)} onToggleStatus={handleToggleStatus} />
       )}
-    <ToastContainer position="top-right" />
 
-
-
+      <ToastContainer position="top-right" />
     </div>
   );
 }

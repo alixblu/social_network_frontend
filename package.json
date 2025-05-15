@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hookform/resolvers": "^5.0.1",
     "@mui/icons-material": "^6.4.11",
     "@mui/material": "^6.4.11",
     "@stomp/stompjs": "^7.1.1",
+    "antd": "^5.25.1",
     "axios": "^1.8.4",
     "lucide-react": "^0.487.0",
     "react": "^19.0.0",
